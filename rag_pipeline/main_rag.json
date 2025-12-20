@@ -1,0 +1,201 @@
+{
+  "name": "Main RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -848,
+        -112
+      ],
+      "id": "93a2665e-ecb6-4b33-9ac5-9ef97f2c853b",
+      "name": "When chat message received",
+      "webhookId": "d5c6cd09-64f0-4863-9393-43c27b874ef3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -576,
+        -112
+      ],
+      "id": "850742b8-0a91-4d1c-8d12-648b2af7b794",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        112
+      ],
+      "id": "498bd727-809b-474b-adfc-70fe135b88e1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ng8g6PxrpEheDJw4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -496,
+        112
+      ],
+      "id": "6a301aaa-fa6f-4a08-bcbc-77f34ee333be",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "TLi3imRqSQa9v1Gk",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this knowledge base to answer questions from the user.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        112
+      ],
+      "id": "c77ee04c-6a3c-411d-bf08-795e21d102f1",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Vgdu4TY4IQeuD824",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        320
+      ],
+      "id": "08b522f6-fe9b-4c65-99a4-c4b0dd1ff5f6",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ng8g6PxrpEheDJw4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## MAIN CONVERSATIONAL AGENT\n** Purpose: User-facing chat interface with RAG capabilities\n\nFlow:\n1. Receives user question via chat trigger\n2. Converts question to vector embedding\n3. Searches vector DB for relevant document chunks\n4. Passes context + question to Claude AI\n5. Returns answer with source citations\n6. Maintains conversation memory for follow-ups\n\nKey Features:\n- Semantic search across all documents\n- Source attribution for every answer\n- Multi-turn conversation support\n- Graceful handling when no relevant docs found\n\nStatus: ✅ Production-ready",
+        "height": 624,
+        "width": 976,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1120,
+        -400
+      ],
+      "typeVersion": 1,
+      "id": "69677879-2ed8-42c0-a344-826aac0512a8",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "1835e2b0-3893-4c11-877d-1e12dd00b092",
+  "meta": {
+    "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"
+  },
+  "id": "JbJ5kgDVuNtq0NDR",
+  "tags": []
+}

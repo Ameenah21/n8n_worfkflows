@@ -1,0 +1,534 @@
+{
+  "name": "delete_files",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFile",
+        "fileToWatch": {
+          "__rl": true,
+          "value": "1GdyQhMJfMmN_LgrMRWLDfzwyf42_gxu7xXQog1YH364",
+          "mode": "list",
+          "cachedResultName": "Meeting Title: 1-Hour Consultation with Jane Doe",
+          "cachedResultUrl": "https://docs.google.com/document/d/1GdyQhMJfMmN_LgrMRWLDfzwyf42_gxu7xXQog1YH364/edit?usp=drivesdk"
+        }
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        -112
+      ],
+      "id": "8ae7eb94-9a06-40bb-9faf-5866668e7d53",
+      "name": "File Updates",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hBSgC996aieAtxxV",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "16G1BlY9suaC4GvxyGQt7AwLWIwkV2SFZ",
+          "mode": "list",
+          "cachedResultName": "meetings",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/16G1BlY9suaC4GvxyGQt7AwLWIwkV2SFZ"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        80
+      ],
+      "id": "bd853e35-0f16-427d-8d43-9d86fe720bb4",
+      "name": "Folder Updates",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hBSgC996aieAtxxV",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "documents"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        176,
+        -16
+      ],
+      "id": "32f82b6d-000a-4e99-8e47-50e1ec56c61b",
+      "name": "Delete old file rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Vgdu4TY4IQeuD824",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        848,
+        0
+      ],
+      "id": "b495b4d0-3d46-4d2d-b6bf-5b87cafd7b16",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ng8g6PxrpEheDJw4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        208
+      ],
+      "id": "b0e67c42-c6c0-48fd-8fab-a369aa52c90a",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        624,
+        -16
+      ],
+      "id": "5613a7c0-03f5-478b-a5c7-cce833afc4f2",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "020cd6a0-43f4-495d-9772-10dcfef266da",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hBSgC996aieAtxxV",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        944,
+        -64
+      ],
+      "id": "e5197300-f336-404c-b39a-21918eca8d84",
+      "name": "Insert into Vectorbase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Vgdu4TY4IQeuD824",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        144
+      ],
+      "id": "59b2a8e3-5907-43e6-ad35-9dc12f7ceaf0",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -272,
+        512
+      ],
+      "id": "fe14ffbf-00dd-49f2-b85d-08ec079a597a",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        608
+      ],
+      "id": "492a5ed4-77bd-4008-9795-d078816daad3",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Vgdu4TY4IQeuD824",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {},
+        "options": {
+          "fields": []
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        400,
+        416
+      ],
+      "id": "67499726-83ac-4c8a-9ead-934cc29d9894",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hBSgC996aieAtxxV",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2fdf0fba-b79c-44ea-83ad-8b35290dfcb6",
+              "name": "=file_name",
+              "value": "={{ $json.name || $json.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -48,
+        -16
+      ],
+      "id": "6eea6268-80db-42a4-8c2e-035625a8af2b",
+      "name": "Get file_name"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        608
+      ],
+      "id": "d0f4acbe-ec23-49fb-9058-571ce26259ad",
+      "name": "Get file_name1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        400,
+        608
+      ],
+      "id": "f2b6b032-f95e-4013-876d-e00dc1f80b6e",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "mergeByFields": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.compareDatasets",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        480
+      ],
+      "id": "876afe97-3f1f-4103-8506-65f6d3393132",
+      "name": "Compare Datasets"
+    },
+    {
+      "parameters": {
+        "operation": "delete"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        848,
+        512
+      ],
+      "id": "88b1eac4-86e2-4359-bea1-fd6bdc526b68",
+      "name": "Delete rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Vgdu4TY4IQeuD824",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "File Updates": {
+      "main": [
+        [
+          {
+            "node": "Get file_name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Folder Updates": {
+      "main": [
+        [
+          {
+            "node": "Get file_name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert into Vectorbase",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Insert into Vectorbase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete old file rows": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert into Vectorbase",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Get file_name1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get file_name": {
+      "main": [
+        [
+          {
+            "node": "Delete old file rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get file_name1": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Datasets": {
+      "main": [
+        [],
+        [],
+        [],
+        [
+          {
+            "node": "Delete rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0f7c493b-09a8-4faf-a7bc-6177b9f3d584",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"
+  },
+  "id": "O0UTrwznrKzRU57N",
+  "tags": []
+}
