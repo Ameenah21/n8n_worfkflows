@@ -1,0 +1,562 @@
+{
+  "name": "spa_daily_consistency_check",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const events = $input.all().map(e => e.json);\nconst therapistName = $('Loop Over therapists').item.json.therapist_name;\n\n// Sort events by start time\nevents.sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime));\n\nconst conflicts = [];\n\n// Check each pair of events for overlap\nfor (let i = 0; i < events.length - 1; i++) {\n  const current = events[i];\n  const next = events[i + 1];\n  \n  const currentEnd = new Date(current.end.dateTime);\n  const nextStart = new Date(next.start.dateTime);\n  \n  // If current event ends after next one starts = overlap\n  if (currentEnd > nextStart) {\n    conflicts.push({\n      therapist: therapistName,\n      event1: {\n        summary: current.summary,\n        start: current.start.dateTime,\n        end: current.end.dateTime\n      },\n      event2: {\n        summary: next.summary,\n        start: next.start.dateTime,\n        end: next.end.dateTime\n      }\n    });\n  }\n}\n\nreturn [{\n  json: {\n    therapist: therapistName,\n    has_conflicts: conflicts.length > 0,\n    conflicts: conflicts\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        272
+      ],
+      "id": "e90490ec-9dd4-466d-b9a1-6349bad69b29",
+      "name": "Check Overlaps"
+    },
+    {
+      "parameters": {
+        "sendTo": "aminatlawal21@gmail.com",
+        "subject": "Daily consistency check",
+        "message": "={{ $json.html_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "4c77eef1-7f5d-469c-8f82-570d5e68e1f2",
+      "name": "Send a message",
+      "webhookId": "dd2b6567-0d8f-40ed-824f-c78bee95557d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7eyLGUmr3zP4LZpB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $json.gcal_id }}",
+          "mode": "id"
+        },
+        "limit": "={{ 50 }}",
+        "timeMax": "={{ $today.endOf('day') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        192
+      ],
+      "id": "251d6438-8f1c-43fc-89ee-22d9b0ef760c",
+      "name": "Get many events",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "lMHwqk7HXAw8dtoh",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -672,
+        192
+      ],
+      "id": "ae4c83cc-8e5f-48dc-9c55-0ae48be0bf60",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all loop outputs\nconst allResults = $input.all().map(item => item.json);\n\n// Separate barbers with and without conflicts\nconst withConflicts = allResults.filter(r => r.has_conflicts);\nconst withoutConflicts = allResults.filter(r => !r.has_conflicts);\n\n// Build a readable summary string (optional, for email body)\nlet summaryText = '';\n\nif (withConflicts.length > 0) {\n  summaryText += '🚨 Conflicts Found:\\n\\n';\n  withConflicts.forEach(r => {\n    summaryText += `Therapist: ${r.barber}\\n`;\n    r.conflicts.forEach(c => {\n      summaryText += `  - ${c.event1.summary} (${c.event1.start} → ${c.event1.end}) overlaps with ${c.event2.summary} (${c.event2.start} → ${c.event2.end})\\n`;\n    });\n    summaryText += '\\n';\n  });\n} else {\n  summaryText += '✅ No conflicts found for any therapist today.\\n\\n';\n}\n\nsummaryText += '— Daily Calendar Consistency Check';\n\n// Return everything neatly for the next node (email)\nreturn [{\n  json: {\n therapists_with_conflicts: withConflicts.map(b => ({\n      name: b.therapist\n    })),\n  therapists_without_conflicts: withoutConflicts.map(b => ({\n      name: b.therapist\n    })),\n    total_therapist: allResults.length,\n    no_of_therapists_with_conflicts: withConflicts.length,\n    no_of_therapists_without_conflicts: withoutConflicts.length,\n    details: withConflicts,\n    summary_text: summaryText\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ffc985f9-b5ca-46b2-b3a0-d3f6b45518fa",
+      "name": "Aggregate_results"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the single summary object from the input\nconst summary = $input.all()[0].json;\n\n// Extract the detailed arrays from the summary object\n// NOTE: I'm assuming 'details' contains the barbers with conflicts, \n// based on the structure of your provided input/output fields.\nconst withConflicts = summary.details || [];\nconst withoutConflicts = summary.therapists_without_conflicts || [];\n\n// Helper: resolve barber name consistently (Adjusted for the input data structure)\nfunction getTherapistName(r) {\n  // If the object comes from the 'details' array, it has conflict info.\n  // If it comes from 'barbers_without_conflicts', it only has 'name'.\n  return r.name || r.therapist || \"Unknown Therapist\";\n}\n\n// Build HTML\nlet html = `\n  <html>\n  <body style=\"font-family: Arial, sans-serif; line-height: 1.6;\">\n    <h2>🧾 Daily Calendar Consistency Check</h2>\n    <p>Here are the results for today's therapist schedules:</p>\n`;\n\n// --- Handle Conflicts (using the 'withConflicts' array derived from summary.details) ---\nif (withConflicts.length > 0) {\n  html += `<h3 style=\"color: #d9534f;\">🚨 Conflicts Found (${withConflicts.length})</h3>`;\n  withConflicts.forEach(r => {\n    const therapist = getTherapistName(r);\n    html += `\n      <h4>💈 Therapist: ${therapist}</h4>\n      <table border=\"1\" cellspacing=\"0\" cellpadding=\"6\" style=\"border-collapse: collapse; width: 100%; margin-bottom: 16px;\">\n        <thead style=\"background-color: #f2f2f2;\">\n          <tr>\n            <th>Event 1</th>\n            <th>Event 2</th>\n          </tr>\n        </thead>\n        <tbody>\n    `;\n    // The critical fix: we now rely on the 'conflicts' array being present\n    // in the objects within the 'details' array (r).\n    // I added a check here just in case, but typically the upstream process ensures it.\n    (r.conflicts || []).forEach(c => { // Using (r.conflicts || []) prevents the 'forEach' error\n      html += `\n        <tr>\n          <td>\n            <strong>${c.event1.summary}</strong><br/>\n            ${new Date(c.event1.start).toLocaleString()} - ${new Date(c.event1.end).toLocaleString()}\n          </td>\n          <td>\n            <strong>${c.event2.summary}</strong><br/>\n            ${new Date(c.event2.start).toLocaleString()} - ${new Date(c.event2.end).toLocaleString()}\n          </td>\n        </tr>\n      `;\n    });\n    html += `</tbody></table>`;\n  });\n} else {\n  html += `<p style=\"color: green; font-size: 16px;\">✅ No conflicts found for any therapist today.</p>`;\n}\n\n// --- Handle Barbers Without Conflicts (using the 'withoutConflicts' array derived from summary.barbers_without_conflicts) ---\nif (withoutConflicts.length > 0) {\n  html += `\n    <h3 style=\"color: #5cb85c;\">✅ Barbers Without Conflicts (${withoutConflicts.length})</h3>\n    <ul>\n      ${withoutConflicts.map(b => `<li>${getTherapistName(b)}</li>`).join('')}\n    </ul>\n  `;\n}\n\nhtml += `\n    <hr/>\n    <p style=\"font-size: 12px; color: #666;\">\n      Report generated automatically by n8n – ${new Date().toLocaleString()}\n    </p>\n  </body>\n  </html>\n`;\n\nreturn [{\n  // The output structure is preserved, using values from the summary object\n  json: {\n    total_therapists: summary.total_therapists,\n    therapists_with_conflicts: withConflicts.length,\n   therapists_without_conflicts: withoutConflicts.length,\n    details: withConflicts,\n    html_body: html\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "c0b4f39f-85e4-4448-95ad-e01398c82819",
+      "name": "Aggregate Barber Conflicts (HTML)"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1327742499,
+          "mode": "list",
+          "cachedResultName": "therapists",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1327742499"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -448,
+        192
+      ],
+      "id": "8b225756-80bb-4680-bdab-50a74ecde857",
+      "name": "Get all therapists",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        192
+      ],
+      "id": "07ed844e-efde-4ace-a8f5-28de820e4baa",
+      "name": "Loop Over therapists"
+    }
+  ],
+  "pinData": {
+    "Aggregate_results": [
+      {
+        "json": {
+          "therapists_with_conflicts": [
+            {
+              "name": "Joy"
+            },
+            {
+              "name": "Maria"
+            },
+            {
+              "name": "Steph"
+            },
+            {
+              "name": "Koko"
+            },
+            {
+              "name": "Brian"
+            },
+            {
+              "name": "Uche"
+            }
+          ],
+          "therapists_without_conflicts": [],
+          "total_therapist": 6,
+          "no_of_therapists_with_conflicts": 6,
+          "no_of_therapists_without_conflicts": 0,
+          "details": [
+            {
+              "therapist": "Joy",
+              "has_conflicts": true,
+              "conflicts": [
+                {
+                  "therapist": "Joy",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Joy",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Joy",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Joy",
+                  "event1": {
+                    "summary": "Amina Linds,Relaxing Massage with Joy",
+                    "start": "2025-12-19T18:00:00+01:00",
+                    "end": "2025-12-19T19:00:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Amina Linds,Relaxing Massage with Joy",
+                    "start": "2025-12-19T18:00:00+01:00",
+                    "end": "2025-12-19T19:00:00+01:00"
+                  }
+                }
+              ]
+            },
+            {
+              "therapist": "Maria",
+              "has_conflicts": true,
+              "conflicts": [
+                {
+                  "therapist": "Maria",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Maria",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Maria",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Maria",
+                  "event1": {
+                    "summary": "Amina Linds,Relaxing Massage with Joy",
+                    "start": "2025-12-19T18:00:00+01:00",
+                    "end": "2025-12-19T19:00:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Amina Linds,Relaxing Massage with Joy",
+                    "start": "2025-12-19T18:00:00+01:00",
+                    "end": "2025-12-19T19:00:00+01:00"
+                  }
+                }
+              ]
+            },
+            {
+              "therapist": "Steph",
+              "has_conflicts": true,
+              "conflicts": [
+                {
+                  "therapist": "Steph",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                }
+              ]
+            },
+            {
+              "therapist": "Koko",
+              "has_conflicts": true,
+              "conflicts": [
+                {
+                  "therapist": "Koko",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                }
+              ]
+            },
+            {
+              "therapist": "Brian",
+              "has_conflicts": true,
+              "conflicts": [
+                {
+                  "therapist": "Brian",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Brian",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Brian",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Brian",
+                  "event1": {
+                    "summary": "Amina Linds,Relaxing Massage with Joy",
+                    "start": "2025-12-19T18:00:00+01:00",
+                    "end": "2025-12-19T19:00:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Amina Linds,Relaxing Massage with Joy",
+                    "start": "2025-12-19T18:00:00+01:00",
+                    "end": "2025-12-19T19:00:00+01:00"
+                  }
+                }
+              ]
+            },
+            {
+              "therapist": "Uche",
+              "has_conflicts": true,
+              "conflicts": [
+                {
+                  "therapist": "Uche",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Uche",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Uche",
+                  "event1": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Aminat Linds,Manicure / Pedicure with Uche",
+                    "start": "2025-12-19T17:00:00+01:00",
+                    "end": "2025-12-19T17:30:00+01:00"
+                  }
+                },
+                {
+                  "therapist": "Uche",
+                  "event1": {
+                    "summary": "Amina Linds,Relaxing Massage with Joy",
+                    "start": "2025-12-19T18:00:00+01:00",
+                    "end": "2025-12-19T19:00:00+01:00"
+                  },
+                  "event2": {
+                    "summary": "Amina Linds,Relaxing Massage with Joy",
+                    "start": "2025-12-19T18:00:00+01:00",
+                    "end": "2025-12-19T19:00:00+01:00"
+                  }
+                }
+              ]
+            }
+          ],
+          "summary_text": "🚨 Conflicts Found:\n\nTherapist: undefined\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Amina Linds,Relaxing Massage with Joy (2025-12-19T18:00:00+01:00 → 2025-12-19T19:00:00+01:00) overlaps with Amina Linds,Relaxing Massage with Joy (2025-12-19T18:00:00+01:00 → 2025-12-19T19:00:00+01:00)\n\nTherapist: undefined\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Amina Linds,Relaxing Massage with Joy (2025-12-19T18:00:00+01:00 → 2025-12-19T19:00:00+01:00) overlaps with Amina Linds,Relaxing Massage with Joy (2025-12-19T18:00:00+01:00 → 2025-12-19T19:00:00+01:00)\n\nTherapist: undefined\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n\nTherapist: undefined\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n\nTherapist: undefined\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Amina Linds,Relaxing Massage with Joy (2025-12-19T18:00:00+01:00 → 2025-12-19T19:00:00+01:00) overlaps with Amina Linds,Relaxing Massage with Joy (2025-12-19T18:00:00+01:00 → 2025-12-19T19:00:00+01:00)\n\nTherapist: undefined\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00) overlaps with Aminat Linds,Manicure / Pedicure with Uche (2025-12-19T17:00:00+01:00 → 2025-12-19T17:30:00+01:00)\n  - Amina Linds,Relaxing Massage with Joy (2025-12-19T18:00:00+01:00 → 2025-12-19T19:00:00+01:00) overlaps with Amina Linds,Relaxing Massage with Joy (2025-12-19T18:00:00+01:00 → 2025-12-19T19:00:00+01:00)\n\n— Daily Calendar Consistency Check"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Check Overlaps": {
+      "main": [
+        [
+          {
+            "node": "Loop Over therapists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Check Overlaps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get all therapists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate_results": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Barber Conflicts (HTML)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Barber Conflicts (HTML)": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all therapists": {
+      "main": [
+        [
+          {
+            "node": "Loop Over therapists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over therapists": {
+      "main": [
+        [
+          {
+            "node": "Aggregate_results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "86e4578a-acdc-40e4-a73e-a2fd29308e16",
+  "meta": {
+    "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"
+  },
+  "id": "VKhmFw2qZO2jQCwA",
+  "tags": []
+}

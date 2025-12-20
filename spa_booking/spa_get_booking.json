@@ -1,0 +1,245 @@
+{
+  "name": "spa_get_booking",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "customer_phone"
+            },
+            {
+              "name": "status"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        192
+      ],
+      "id": "3d90f710-dbc4-45f5-92b1-4ad979520022",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1632282617,
+          "mode": "list",
+          "cachedResultName": "bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1632282617"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "customer_phone",
+              "lookupValue": "={{ $json.customer_phone }}"
+            },
+            {
+              "lookupColumn": "status",
+              "lookupValue": "={{ $json.status }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        80,
+        192
+      ],
+      "id": "6b341921-86f4-4b87-bbd3-6961de32ea6b",
+      "name": "Get Bookings details",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8c82d5b1-a17a-4835-ae89-50ad59b04474",
+              "leftValue": "={{ $json.has_upcoming }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "3d351b74-ff13-406f-ad6e-ab8872c87834",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        192
+      ],
+      "id": "12811b59-69bb-42ad-bade-103562c98a96",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const bookings = $input.all().flatMap(i => i.json);\nconst statusFilter = $('When Executed by Another Workflow').first().json.status;\n\n// Current time in Athens (workflow timezone already set)\nconst now = new Date();\n\n// Filter by status if provided\nlet filtered = bookings;\nif (statusFilter && statusFilter !== \"All\") {\n  filtered = bookings.filter(b => b.status === statusFilter);\n}\n\n// Keep only bookings after 'now'\nfiltered = filtered.filter(b => {\n  const bookingDate = new Date(b.date_timestamp);\n  return bookingDate > now;\n});\n\n// Sort by booking date ascending\nfiltered.sort((a, b) => new Date(a.date) - new Date(b.date));\n\n// ✅ If no results, return a flag instead of an empty array\nif (filtered.length === 0) {\n  return [{\n    json: {\n      has_upcoming: false,\n      message: \"No upcoming bookings found.\",\n      checked_at: new Date().toISOString()\n    }\n  }];\n}\n\n// ✅ Otherwise, return the upcoming bookings\nreturn filtered.map(b => ({\n  json: {\n    has_upcoming: true,\n    gcal_uid: b.booking_id || b.gcal_uid,\n    calendar_event_id: b.calendar_event_id,\n    customer_name: b.customer_name,\n    customer_phone: b.customer_phone,\n    service: b.service,\n    therapist_name: b.therapist_name,\n    date: b.date,\n    time: b.time,\n    duration: b.duration_mins,\n    status: b.status,\n  },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        192
+      ],
+      "id": "2b8cbb2a-c1b9-4cb2-a83a-bf172eb5ad00",
+      "name": "filter upcoming bookings",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const bookings = $input.all().map(b => b.json);\nconst statusFilter = $('When Executed by Another Workflow').first().json.status;\n\n// Filter by status if provided\nlet filtered = bookings;\nif (statusFilter && statusFilter !== \"All\") {\n  filtered = bookings.filter(b => b.status === statusFilter);\n}\n\n// Sort by date (upcoming first)\nfiltered.sort((a, b) => new Date(a.date) - new Date(b.date));\n\n// Return structured data\nreturn filtered.map(b => ({\n  json: {\n    gcal_uid: b.gcal_uid,\n    calendar_event_id: b.calendar_event_id,\n    customer_name: b.customer_name,\n    customer_phone : b.customer_phone,\n    service: b.service,\n    therapist_name: b.therapist_name,\n    date: b.date,\n    time: b.time,\n    duration: b.duration,\n    status: b.status\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        96
+      ],
+      "id": "0a372c7f-4fe4-4a31-91ad-527246ae7c33",
+      "name": "Format Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    status: \"no_upcoming_meeting\",\n    message: \"No upcoming meeting found.\",\n    details: {\n      reason: \"No bookings scheduled after the current time.\",\n      checked_at: new Date().toISOString()\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        288
+      ],
+      "id": "594f33e5-d7c2-4f76-a11b-feb595f6bc33",
+      "name": "No upcoming meeting"
+    },
+    {
+      "parameters": {
+        "content": "## Get booking\n**Fetches existing booking details (by client name, phone, or booking ID).\nUsed for user inquiries or confirmation steps.\nTrigger: Called by Main Workflow or chatbot request.\nOutput: Booking details object (barber, service, date/time, status)",
+        "height": 208,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -176,
+        144
+      ],
+      "typeVersion": 1,
+      "id": "b2fc50d1-568a-49ca-bbbb-c2363b6947a9",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "customer_phone": "123456789",
+          "status": "confirmed"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Bookings details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Bookings details": {
+      "main": [
+        [
+          {
+            "node": "filter upcoming bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No upcoming meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filter upcoming bookings": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c0a1bf95-c117-4b91-a213-0e267b0f2644",
+  "meta": {
+    "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"
+  },
+  "id": "nPBVeZjTXQs5mlLI",
+  "tags": []
+}

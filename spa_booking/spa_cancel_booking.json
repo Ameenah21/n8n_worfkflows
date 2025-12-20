@@ -1,0 +1,586 @@
+{
+  "name": "spa_cancel_booking",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $json.gcal_uid }}",
+          "mode": "id"
+        },
+        "eventId": "={{ $json.calendar_event_id }}",
+        "options": {
+          "sendUpdates": "all"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        128
+      ],
+      "id": "cccc545e-5092-4f55-9eed-8fe6b43eb0d7",
+      "name": "Delete an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "lMHwqk7HXAw8dtoh",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "customer_phone"
+            },
+            {
+              "name": "selected_index"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        128
+      ],
+      "id": "9c43f498-b453-411f-9708-7aa20c112a88",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1632282617,
+          "mode": "list",
+          "cachedResultName": "bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1632282617"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "customer_phone",
+              "lookupValue": "={{ $json.customer_phone }}"
+            },
+            {
+              "lookupColumn": "calendar_event_id",
+              "lookupValue": "={{ $json.calendar_event_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1088,
+        128
+      ],
+      "id": "102b3496-013c-47fe-81c3-719e876007d9",
+      "name": "Get Bookings details",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1632282617,
+          "mode": "list",
+          "cachedResultName": "bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1632282617"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "calendar_event_id": "={{ $('Get Bookings details').item.json.calendar_event_id }}",
+            "status": "cancelled",
+            "updated_at": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "calendar_event_id"
+          ],
+          "schema": [
+            {
+              "id": "gcal_uid",
+              "displayName": "gcal_uid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "calendar_event_id",
+              "displayName": "calendar_event_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "platform_id",
+              "displayName": "platform_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "shop_name",
+              "displayName": "shop_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "therapist_name",
+              "displayName": "therapist_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date_timestamp",
+              "displayName": "date_timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "duration_mins",
+              "displayName": "duration_mins",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1536,
+        128
+      ],
+      "id": "7d2170a5-0f79-4637-b794-cfe97c13a1f0",
+      "name": "Update bookings",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const bookingDetails = $('Update bookings').first().json;\nconst cancelSuccess = $('Delete an event').first().json;\n\nreturn [{\n  json: {\n    success: cancelSuccess.success,\n    booking_id: bookingDetails.booking_id,\n    message: \"Booking cancelled successfully\",\n    cancelled_booking: {\n      service: bookingDetails.service,\n      barber: bookingDetails.barber_name,\n      date: bookingDetails.date,\n      time: bookingDetails.time\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        128
+      ],
+      "id": "c90f9735-891c-4e87-a2da-e2c821c8ec37",
+      "name": "Format output"
+    },
+    {
+      "parameters": {
+        "content": "## Cancel Booking\n**Cancels a confirmed booking and updates system status.\nOptional step: send cancellation notice to barber or client.\nTrigger: Called when user confirms cancellation.\nOutput: Confirmation message",
+        "height": 304,
+        "width": 480
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        -16
+      ],
+      "typeVersion": 1,
+      "id": "27d18981-d653-4eb2-aa67-85fad6b52ced",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all bookings and selected index from input\nconst bookings = $input.all() || [];\nconst selectedIndex = parseInt($('When Executed by Another Workflow').first().json.selected_index, 10) - 1; // 1-based index\nif (!bookings.length) {\n  return [{ json: { error: \"No bookings found\" } }];\n}\n\nif (selectedIndex < 0 || selectedIndex >= bookings.length) {\n  return [{ json: { error: \"Invalid booking index\" } }];\n}\n\nconst selected = bookings[selectedIndex];\n\n//Format booking info for rescheduling\nreturn [{\n  json: {\n    gcal_uid: selected.json.gcal_uid,\n    calendar_event_id: selected.json.calendar_event_id,\n    service: selected.json.service,\n    barber_name: selected.json.barber_name,\n    shop_name: selected.json.shop_name,\n    customer_email: selected.json.email,\n    customer_phone: selected.json.customer_phone,\n    customer_name: selected.json.customer_name,\n    old_date: selected.json.date,\n    old_time: selected.json.time,\n    new_date:$('When Executed by Another Workflow').first().json.new_date,\n    new_time: $('When Executed by Another Workflow').first().json.new_time,\n    status: \"ready_for_reschedule\",\n    selectedIndex\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        128
+      ],
+      "id": "ab543afb-df3e-4ff3-8a0f-47cc4349f051",
+      "name": "select_booking"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const input = item.json;\n\n  const requiredFields = [\n    \"customer_phone\",\n    \"selected_index\"\n  ];\n\n  // Find missing or null fields\n  const missing = requiredFields.filter(\n    f => input[f] === null || input[f] === undefined || input[f] === \"\"\n  );\n\n  if (missing.length > 0) {\n    return {\n      json: {\n        status: \"error\",\n        message: `Missing or null values for: ${missing.join(\", \")}`\n      }\n    };\n  }\n\n  // Return parsed and validated data\n  return {\n    json: {\n      status: \"ok\",\n      customer_email: input.customer_email,\n      selected_index: input.selected_index\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        128
+      ],
+      "id": "74e2bc83-2a3a-4fc9-b6b8-5adb5785a616",
+      "name": "Parse Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a156af6a-3d6e-4f68-b00a-e5c62c9d97af",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        -96
+      ],
+      "id": "befc6ac4-b4a9-4474-a346-77a8ab6dbd03",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const booking = $input.first().json;\nconst validationData = $('When Executed by Another Workflow').first().json;\n\nif (!booking || !booking.booking_id) {\n  return [{\n    json: {\n      error: true,\n      message: \"Booking not found\",\n      code: \"BOOKING_NOT_FOUND\",\n      booking_id: validationData.booking_id,\n      books: booking\n    }\n  }];\n}\n\nif (booking.status === 'cancelled') {\n  return [{\n    json: {\n      error: true,\n      message: \"Booking is already cancelled\",\n      code: \"ALREADY_CANCELLED\",\n      booking_id: booking.booking_id\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    error: false,\n    booking: booking\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -96
+      ],
+      "id": "03568e3b-f0fe-4146-bc7c-5dc6120c0073",
+      "name": "Validate Booking Exists"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the error data from the previous validation/check node\nconst errorData = $('Validate Booking Exists').first().json;\n\nreturn [{\n  json: {\n    error: true,\n    message: errorData.message || \"Operation failed\",\n    code: errorData.code || \"UNKNOWN_ERROR\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -96
+      ],
+      "id": "0ba3d0c8-c5ad-46c0-81de-9e2572ab3d2d",
+      "name": "format output"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "nPBVeZjTXQs5mlLI",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/nPBVeZjTXQs5mlLI",
+          "cachedResultName": "spa_get_booking"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "confirmed",
+            "customer_phone": "={{ $('When Executed by Another Workflow').item.json.customer_phone }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        128
+      ],
+      "id": "4b15792c-e3a4-4527-b8f8-56dafe37946e",
+      "name": "Call 'spa_get_booking'"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "customer_phone": "123456789",
+          "selected_index": "1"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Delete an event": {
+      "main": [
+        [
+          {
+            "node": "Update bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Bookings details": {
+      "main": [
+        [
+          {
+            "node": "Delete an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update bookings": {
+      "main": [
+        [
+          {
+            "node": "Format output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "select_booking": {
+      "main": [
+        [
+          {
+            "node": "Get Bookings details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Input": {
+      "main": [
+        [
+          {
+            "node": "Call 'spa_get_booking'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "format output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Validate Booking Exists": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'spa_get_booking'": {
+      "main": [
+        [
+          {
+            "node": "select_booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "752674f3-f729-4d90-a1f0-13f3135bc871",
+  "meta": {
+    "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"
+  },
+  "id": "oDXc5QjXloPnExl7",
+  "tags": []
+}

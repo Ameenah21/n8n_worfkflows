@@ -1,0 +1,625 @@
+{
+  "name": "spa_check_availability",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// This receives parameters from the main workflow\nconst input = items[0].json;\n\nreturn [{\n  json: {\n    date: input.date,              // \"2025-10-20\"\n    time: input.time,              // \"14:00\"\n    service: input.service,\n    service_duration: input.service_duration,// \"Haircut\"\n    therapist_preference: input.therapist_preference || null  // \"Tony\" or null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        96
+      ],
+      "id": "ed2fe332-cb33-433e-a050-6799b023a2b5",
+      "name": "Parse Input"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        384
+      ],
+      "id": "24de5ed4-f916-44b8-beed-14446e896abb",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $json.gcal_id }}",
+          "mode": "id"
+        },
+        "timeMin": "={{ $('Calculate end time/validate date').first().json.start_timestamp.toDateTime() }}",
+        "timeMax": "={{ $('Calculate end time/validate date').first().json.start_timestamp.toDateTime().endOf('day') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1344,
+        400
+      ],
+      "id": "b9315c27-292c-4a5d-a4d6-ea09d60fab2b",
+      "name": "Get availability in a calendar",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "lMHwqk7HXAw8dtoh",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const events = $input.all();\nconst therapistName = $('Loop Over Items').item.json['therapist_name'];\nconst calendarId = $('Loop Over Items').item.json['GCal ID'];\nconst isAvailable = $('Get availability in a calendar').item.json['available'];\n\n// If no events returned, barber is available\n// const isAvailable = events.length === 0;\nif (isAvailable === 'True');\n  return [{\n    json: {\n      therapist_name: therapistName,\n      calendar_id: calendarId,\n      available: isAvailable,\n      conflicting_events: events.length,\n      checked_date: $('Parse Input').first().json.date,\n      checked_time: $('Parse Input').first().json.time\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        480
+      ],
+      "id": "c9c441c9-d08e-431e-b4e4-8b6fbd4f3a97",
+      "name": "Determine Availability"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allResults = $('Loop Over Items').all();\n\nconst availabletherapists = allResults.filter(r => r.json.available);\nconst busytherapists = allResults.filter(r => !r.json.available);\n\nreturn [{\n  json: {\n    requested_date: $('Parse Input').first().json.date,\n    requested_time: $('Parse Input').first().json.time,\n    requested_service: $('Parse Input').first().json.service,\n    therapist_preference: $('Parse Input').first().json.therapist_preference,\n    available_therapists: availabletherapists.map(b => ({\n      name: b.json.therapist_name,\n      calendar_id: b.json.calendar_id\n    })),\n    busy_therapists: busytherapists.map(b => ({\n      name: b.json.therapist_name,\n      calendar_id: b.json.calendar_id\n    })),\n    any_available: availabletherapists.length > 0\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        192
+      ],
+      "id": "0aedb0e9-8423-49e5-b109-bd7c9e52f773",
+      "name": "Aggregate Results"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "date"
+            },
+            {
+              "name": "time"
+            },
+            {
+              "name": "service"
+            },
+            {
+              "name": "service_duration"
+            },
+            {
+              "name": "therapist_preference"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1120,
+        96
+      ],
+      "id": "7e3c33f2-42b0-43ab-9eb0-001216d95966",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "082ba247-f10f-49ec-8778-dbff2f534bd1",
+              "leftValue": "={{ $('Parse Input').item.json.therapist_preference }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "9bcb63d2-9fff-4c1f-b263-8373d96ea094",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        192
+      ],
+      "id": "fc265bc6-0e2c-4420-b089-eb2c62dd41c8",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8240e119-7652-4018-99a2-cccae8be9a64",
+              "leftValue": "={{ $json.is_in_past }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        96
+      ],
+      "id": "280ac463-e2f2-4c87-be8e-396425e67be6",
+      "name": "If valid time"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst data = $input.first().json;\n\nreturn [{\n  json: {\n    available: false,\n    reason: \"time_in_past\",\n    message: `Cannot book appointments in the past. Requested: ${data.date} at ${data.start_time}`,\n    requested: {\n      date: data.date,\n      time: data.start_time,\n      service: data.service\n    },\n    alternatives: []\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1b6c2d44-9a54-4038-aa17-d30fbc3934ed",
+      "name": "Format output"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get inputs\nconst input = $('When Executed by Another Workflow').first().json;\nconst requestedDate = input.date; // \"2025-10-19\"\nconst requestedTime = input.time; // \"14:00\"\nconst duration = $input.first().json.service_duration; // 30\n\n// Create start datetime\nconst startDateTime = new Date(`${requestedDate}T${requestedTime}:00`);\n\n// Calculate end datetime\nconst endDateTime = new Date(startDateTime.getTime() + (duration * 60 * 1000));\n\n// Get current time in Africa/Lagos timezone\nconst now = new Date();\n\n// Check if requested time is in the past or now\nconst isInPast = startDateTime <= now;\n\n// Format timestamps for Google Calendar (ISO 8601 format)\nconst startTimestamp = startDateTime.toISOString().replace('Z', '+01:00'); \nconst endTimestamp = endDateTime.toISOString().replace('Z', '+01:00');\n\n// Return all data including validation flag and timestamps\nreturn [{\n  json: {\n    input,\n    date: requestedDate,\n    start_time: requestedTime,\n    end_time: endDateTime.toTimeString().substring(0, 5), // \"14:30\" for reference\n    duration: duration,\n    service: input.service,\n    therapist: input.therapist_preference,\n    is_in_past: isInPast,\n    start_timestamp: startTimestamp, // Use this for Google Calendar\n    end_timestamp: endTimestamp      // Use this for Google Calendar\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        112
+      ],
+      "id": "15857415-ab53-4708-b725-4112e1a8cef3",
+      "name": "Calculate end time/validate date"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the result from previous node\nconst input = $input.all().flatMap(i => i.json);\n\n// If no input or malformed, return a default response\nif (!input || input.length === 0 || input[0].available === undefined) {\n  return [{\n    json: {\n      success: false,\n      available: false,\n      message: \"Could not determine availability.\",\n      checked_at: new Date().toISOString()\n    }\n  }];\n}\n\n// Extract the availability flag\nconst isAvailable = input[0].available;\n\n// Return a standardized structure\nreturn [{\n  json: {\n    success: true,\n    available: isAvailable,\n    therapist_name: $('Get therapist details').first().json.therapist_name,\n    message: isAvailable\n      ? \"Therapist is available at the requested time.\"\n      : \"Therapist is not available at the requested time.\",\n    checked_at: new Date().toISOString()\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        0
+      ],
+      "id": "775467c9-1a0d-4457-ab21-464390c493ea",
+      "name": "Format output1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1327742499,
+          "mode": "list",
+          "cachedResultName": "therapists",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1327742499"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        0,
+        192
+      ],
+      "id": "3b9ebeba-3303-43cf-b6a4-eba8fb3e9184",
+      "name": "Get all therapists",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const preferredtherapist = $('Parse Input').first().json.therapist_preference?.trim();\nconst alltherapists = $('Get all therapists').all();\n\nif (!preferredtherapist || preferredtherapist.toLowerCase() === 'any') {\n  // No specific barber preference\n  return [{ json: { therapist_name: \"\" } }];\n}\n\n// Case-insensitive match but keep original name formatting\nconst normalizedPreferred = preferredtherapist.toLowerCase();\n\nconst match = alltherapists.find(therapist => \n  therapist.json['therapist_name']?.toLowerCase().trim() === normalizedPreferred\n);\n\nif (!match) {\n  // Barber not found\n  return [{ json: { therapist_name: \"\" } }];\n}\n\n// Barber found — return name as stored\nreturn [{ json: { therapist_name: match.json['therapist_name'] } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        96
+      ],
+      "id": "020e1271-6fa6-4dbf-95f8-a281ed4459aa",
+      "name": "Check therapist"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1327742499,
+          "mode": "list",
+          "cachedResultName": "therapists",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1327742499"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        192
+      ],
+      "id": "ce4cee4a-f29e-4ebe-82e9-c69998c33cda",
+      "name": "Get all therapists1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $json.gcal_id }}",
+          "mode": "id"
+        },
+        "timeMin": "={{ $('Calculate end time/validate date').first().json.start_timestamp.toDateTime() }}",
+        "timeMax": "={{ $('Calculate end time/validate date').first().json.start_timestamp.toDateTime().endOf('day') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "a517d2b9-4c70-40f2-a126-62901d9aad9b",
+      "name": "get therapist availabilty",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "lMHwqk7HXAw8dtoh",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1cx4MRTqBlA0XevxmxWi8D9tvN6boUvSeOR5ThI-c0DM",
+          "mode": "list",
+          "cachedResultName": "Administrator details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cx4MRTqBlA0XevxmxWi8D9tvN6boUvSeOR5ThI-c0DM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 643692552,
+          "mode": "list",
+          "cachedResultName": "barbers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xv3PfnCn85MYGtTQYDWzGPV0JyQXKZNJaKYnrKpb-JA/edit#gid=643692552"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "barber_name",
+              "lookupValue": "={{ $json.barber_name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        0
+      ],
+      "id": "1011db8b-122c-4519-8dec-25d53a6ca51f",
+      "name": "Get therapist details",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "869a85fa-6f08-4c2a-83a5-8f11d7676477",
+              "leftValue": "={{ $json.barber_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        96
+      ],
+      "id": "2115ff3c-5bb0-4032-953c-c13c894bd2e1",
+      "name": "If therapist"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "date": "2025-12-17",
+          "time": "17:00",
+          "service": "Manicure / Pedicure",
+          "service_duration": "30",
+          "therapist_preference": null
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Parse Input": {
+      "main": [
+        [
+          {
+            "node": "Calculate end time/validate date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get availability in a calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get availability in a calendar": {
+      "main": [
+        [
+          {
+            "node": "Determine Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Availability": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Check therapist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If valid time": {
+      "main": [
+        [
+          {
+            "node": "Format output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get all therapists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate end time/validate date": {
+      "main": [
+        [
+          {
+            "node": "If valid time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all therapists": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check therapist": {
+      "main": [
+        [
+          {
+            "node": "If therapist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all therapists1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get therapist availabilty": {
+      "main": [
+        [
+          {
+            "node": "Format output1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get therapist details": {
+      "main": [
+        [
+          {
+            "node": "get therapist availabilty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If therapist": {
+      "main": [
+        [
+          {
+            "node": "Get all therapists1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get therapist details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "3f159a6c-1861-4d2a-8548-663037e282a3",
+  "meta": {
+    "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"
+  },
+  "id": "gBPMEOqob66qYEID",
+  "tags": []
+}

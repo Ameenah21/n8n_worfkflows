@@ -1,0 +1,631 @@
+{
+  "name": "spa_get_all_availability",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2032,
+        544
+      ],
+      "id": "5f1b0c76-31a1-411c-acd4-0571f4118b0d",
+      "name": "Loop Over Items",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $json.gcal_id }}",
+          "mode": "id"
+        },
+        "timeMin": "={{ $('Calculate end time/validate date').first().json.start_timestamp.toDateTime() }}",
+        "timeMax": "={{ $('Calculate end time/validate date').first().json.start_timestamp.toDateTime().endOf('day') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        2272,
+        576
+      ],
+      "id": "1b27e5b3-7268-4255-a341-0d368c85ef69",
+      "name": "Get many events",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "lMHwqk7HXAw8dtoh",
+          "name": "Google Calendar account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input events (or empty array)\nconst events = ($input.all() || []).map(e => e.json);\nconst serviceDuration = 30;\nconst openTime = \"10:00\";\nconst closeTime = \"20:30\";\nconst therapistName = $('Loop Over Items').first().json.therapist_name;\n\n// Helpers\nfunction timeToMinutes(time) {\n  if (!time) return 0;\n  let timeStr = time;\n  if (time.includes('T')) timeStr = time.split('T')[1].substring(0, 5);\n  const [h, m] = timeStr.split(':').map(Number);\n  return h * 60 + m;\n}\n\nfunction minutesToTime(mins) {\n  const h = Math.floor(mins / 60);\n  const m = mins % 60;\n  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;\n}\n\nconst openMinutes = timeToMinutes(openTime);\nconst closeMinutes = timeToMinutes(closeTime);\n\nlet availableSlots = [];\nlet currentTime = openMinutes;\n\n// ✅ Handle “no input at all” (no events found)\nif (events.length === 0) {\n  while (currentTime + serviceDuration <= closeMinutes) {\n    availableSlots.push(minutesToTime(currentTime));\n    currentTime += 30;\n  }\n} else {\n  // Sort & process normally\n  events.sort((a, b) => new Date(a.start?.dateTime || a.start) - new Date(b.start?.dateTime || b.start));\n\n  for (let i = 0; i < events.length; i++) {\n    const eventStartTime = events[i].start?.dateTime || events[i].start;\n    const eventEndTime = events[i].end?.dateTime || events[i].end;\n    const eventStart = timeToMinutes(eventStartTime);\n    const eventEnd = timeToMinutes(eventEndTime);\n\n    while (currentTime + serviceDuration <= eventStart) {\n      availableSlots.push(minutesToTime(currentTime));\n      currentTime += 30;\n    }\n\n    currentTime = Math.max(currentTime, eventEnd);\n  }\n\n  while (currentTime + serviceDuration <= closeMinutes) {\n    availableSlots.push(minutesToTime(currentTime));\n    currentTime += 30;\n  }\n}\n\nreturn [{\n  json: {\n    therapist_name: therapistName,\n    available_slots: availableSlots\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2496,
+        640
+      ],
+      "id": "784c400b-68f6-4895-a07d-49399e35efa2",
+      "name": "Find Gaps in Calendar",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// This receives parameters from the main workflow\nconst input = items[0].json;\n\nreturn [{\n  json: {\n    date: input.date,              // \"2025-10-20\"\n    time: input.time,              // \"14:00\"\n    service: input.service,  \n    service_duration: input.service_duration,// \"Haircut\"\n    therapist_preference: input.therapist_preference || null  // \"Kostas\" or null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        288
+      ],
+      "id": "b2d0b7b4-da72-4b1e-9ad2-fde60845b33f",
+      "name": "Parse Input"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all barbers' availability\nconst allTherapists = $input.all();\n\n// Group by time slot\nconst slotMap = {};\n\nallTherapists.forEach(therapist => {\n  const therapistName = therapist.json.therapist_name;\n  const slots = therapist.json.available_slots;\n  \n  slots.forEach(time => {\n    if (!slotMap[time]) {\n      slotMap[time] = [];\n    }\n    slotMap[time].push(therapistName);\n  });\n});\n\n// Convert to array\nconst result = Object.keys(slotMap)\n  .sort()\n  .map(time => ({\n    time: time,\n    therapists: slotMap[time]\n  }));\n\nreturn [{\n  json: {\n    date: $('Parse Input').first().json.date,\n    available_slots: result\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        384
+      ],
+      "id": "7b3b8061-1c51-4761-b7ae-421e124710d5",
+      "name": "Aggregate results"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "date"
+            },
+            {
+              "name": "time"
+            },
+            {
+              "name": "service"
+            },
+            {
+              "name": "service_duration"
+            },
+            {
+              "name": "therapist_preference"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        288
+      ],
+      "id": "5043d677-8a46-4f0e-be7a-2dc9802d6739",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input events (or empty array)\nconst events = ($input.all() || []).map(e => e.json);\nconst serviceDuration = 30;\nconst openTime = \"10:00\";\nconst closeTime = \"20:30\";\nconst therapistName = $('Get therapist details').first().json.therapist_name;\n\n// Helpers\nfunction timeToMinutes(time) {\n  if (!time) return 0;\n  let timeStr = time;\n  if (time.includes('T')) timeStr = time.split('T')[1].substring(0, 5);\n  const [h, m] = timeStr.split(':').map(Number);\n  return h * 60 + m;\n}\n\nfunction minutesToTime(mins) {\n  const h = Math.floor(mins / 60);\n  const m = mins % 60;\n  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;\n}\n\nconst openMinutes = timeToMinutes(openTime);\nconst closeMinutes = timeToMinutes(closeTime);\n\nlet availableSlots = [];\nlet currentTime = openMinutes;\n\n// ✅ Handle “no input at all” (no events found)\nif (events.length === 0) {\n  while (currentTime + serviceDuration <= closeMinutes) {\n    availableSlots.push(minutesToTime(currentTime));\n    currentTime += 30;\n  }\n} else {\n  // Sort & process normally\n  events.sort((a, b) => new Date(a.start?.dateTime || a.start) - new Date(b.start?.dateTime || b.start));\n\n  for (let i = 0; i < events.length; i++) {\n    const eventStartTime = events[i].start?.dateTime || events[i].start;\n    const eventEndTime = events[i].end?.dateTime || events[i].end;\n    const eventStart = timeToMinutes(eventStartTime);\n    const eventEnd = timeToMinutes(eventEndTime);\n\n    while (currentTime + serviceDuration <= eventStart) {\n      availableSlots.push(minutesToTime(currentTime));\n      currentTime += 30;\n    }\n\n    currentTime = Math.max(currentTime, eventEnd);\n  }\n\n  while (currentTime + serviceDuration <= closeMinutes) {\n    availableSlots.push(minutesToTime(currentTime));\n    currentTime += 30;\n  }\n}\n\nreturn [{\n  json: {\n    therapist_name: therapistName,\n    available_slots: availableSlots\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        192
+      ],
+      "id": "ea2e2f16-580a-4cc9-871d-fd3d6f22ec34",
+      "name": "Format output"
+    },
+    {
+      "parameters": {
+        "content": "## Get all available time\n**Retrieves available time slots for all barbers or all services in a given timeframe.\nUseful when user hasn’t specified a barber yet.\nTrigger: Called when user asks “what times are available?”\nOutput: List of available slots per barber/service.",
+        "height": 208,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "4b59cbcb-d0c8-4989-b552-fb7d4496756d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8240e119-7652-4018-99a2-cccae8be9a64",
+              "leftValue": "={{ $json.is_in_past }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        912,
+        288
+      ],
+      "id": "6e04b28c-b292-4487-86cf-c21b51f5e377",
+      "name": "If valid time"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get inputs\nconst input = $('When Executed by Another Workflow').first().json;\nconst requestedDate = input.date; // \"2025-10-19\"\nconst requestedTime = input.time; // \"14:00\"\nconst duration = $('Get service duration').first().json.duration_mins; // 30\n\n// Create start datetime\nconst startDateTime = new Date(`${requestedDate}T${requestedTime}:00`);\n\n// Calculate end datetime\nconst endDateTime = new Date(startDateTime.getTime() + (duration * 60 * 1000));\n\n// Get current time in Africa/lagos timezone\nconst now = new Date();\n\n\n// Check if requested time is in the past or now\nconst isInPast = startDateTime <= now;\n\n// Format timestamps for Google Calendar (ISO 8601 format)\nconst startTimestamp = startDateTime.toISOString().replace('Z', '+01:00'); \nconst endTimestamp = endDateTime.toISOString().replace('Z', '+01:00');\n\n// Return all data including validation flag and timestamps\nreturn [{\n  json: {\n    input,\n    date: requestedDate,\n    start_time: requestedTime,\n    end_time: endDateTime.toTimeString().substring(0, 5), // \"14:30\" for reference\n    duration: duration,\n    service: input.service,\n    therapist_name: input.therapist_preference,\n    is_in_past: isInPast,\n    start_timestamp: startTimestamp, // Use this for Google Calendar\n    end_timestamp: endTimestamp      // Use this for Google Calendar\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        288
+      ],
+      "id": "a98d1c36-4e9e-46fa-b1ce-670c83a1b0c4",
+      "name": "Calculate end time/validate date"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst data = $input.first().json;\n\nreturn [{\n  json: {\n    available: false,\n    reason: \"time_in_past\",\n    message: `Cannot book appointments in the past. Requested: ${data.date} at ${data.start_time}`,\n    requested: {\n      date: data.date,\n      time: data.start_time,\n      service: data.service\n    },\n    alternatives: []\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        192
+      ],
+      "id": "dd018719-b107-495a-ba95-0143c995f172",
+      "name": "Format output1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1327742499,
+          "mode": "list",
+          "cachedResultName": "therapists",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1327742499"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        384
+      ],
+      "id": "8fa4aa7f-c5b6-40f6-9d23-12356a650c0b",
+      "name": "Get all therapists",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const preferredTherapists = $('Parse Input').first().json.therapist_preference?.trim();\nconst allTherapists = $('Get all therapists').all();\n\nif (!preferredTherapists || preferredTherapists.toLowerCase() === 'any') {\n  // No specific barber preference\n  return [{ json: { therapist_name: \"\" } }];\n}\n\n// Case-insensitive match but keep original name formatting\nconst normalizedPreferred = preferredTherapists.toLowerCase();\n\nconst match = allTherapists.find(therapist => \n  therapist.json['therapist_name']?.toLowerCase().trim() === normalizedPreferred\n);\n\nif (!match) {\n  // Barber not found\n  return [{ json: { therapist_name: \"\" } }];\n}\n\n// Barber found — return name as stored\nreturn [{ json: { therapist_name: match.json['therapist_name'] } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        384
+      ],
+      "id": "142a4f81-fd96-4715-ac22-dbca3a37884a",
+      "name": "Filter therapists"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "54da0e79-bf2b-4d50-8585-64091bd8bc13",
+              "leftValue": "={{ $json.therapist_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        384
+      ],
+      "id": "daa72626-13b1-48bd-b1d9-b8eb5b3ef2d7",
+      "name": "if selected therapist"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1327742499,
+          "mode": "list",
+          "cachedResultName": "therapists",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1327742499"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "therapist_name",
+              "lookupValue": "={{ $json.therapist_name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1808,
+        192
+      ],
+      "id": "880ccd7f-ea88-4532-90d4-9b01f567c614",
+      "name": "Get therapist details",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $json.gcal_id }}",
+          "mode": "id"
+        },
+        "timeMin": "={{ $('Calculate end time/validate date').first().json.start_timestamp.toDateTime() }}",
+        "timeMax": "={{ $('Calculate end time/validate date').first().json.start_timestamp.toDateTime().endOf('day') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        2032,
+        192
+      ],
+      "id": "5a124f2a-f7f8-4ee5-80dc-3ce6e913564b",
+      "name": "get therapist events",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "lMHwqk7HXAw8dtoh",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1327742499,
+          "mode": "list",
+          "cachedResultName": "therapists",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1327742499"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1808,
+        544
+      ],
+      "id": "ce0bb4a7-8384-46fd-930c-b62315f8291f",
+      "name": "Get all therapists1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 673703495,
+          "mode": "list",
+          "cachedResultName": "services_pricing_duration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=673703495"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "service_name",
+              "lookupValue": "={{ $json.service }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        240,
+        288
+      ],
+      "id": "307c0587-158f-4a90-956a-1e0f4597a4b8",
+      "name": "Get service duration",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "date": "2025-12-16",
+          "time": "12:41",
+          "service": "Relaxing Massage",
+          "service_duration": "60",
+          "therapist_preference": "Joy"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Find Gaps in Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Gaps in Calendar": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Input": {
+      "main": [
+        [
+          {
+            "node": "Get service duration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If valid time": {
+      "main": [
+        [
+          {
+            "node": "Format output1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get all therapists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate end time/validate date": {
+      "main": [
+        [
+          {
+            "node": "If valid time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all therapists": {
+      "main": [
+        [
+          {
+            "node": "Filter therapists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter therapists": {
+      "main": [
+        [
+          {
+            "node": "if selected therapist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if selected therapist": {
+      "main": [
+        [
+          {
+            "node": "Get all therapists1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get therapist details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get therapist details": {
+      "main": [
+        [
+          {
+            "node": "get therapist events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get therapist events": {
+      "main": [
+        [
+          {
+            "node": "Format output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all therapists1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get service duration": {
+      "main": [
+        [
+          {
+            "node": "Calculate end time/validate date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3cdf92c1-87a9-4577-98dc-7790bd4f5d9b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"
+  },
+  "id": "etU7Fxxu2NdWBLdo",
+  "tags": []
+}

@@ -1,0 +1,659 @@
+{
+  "name": "spa_reschedule_ booking",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $('select_booking').item.json.gcal_uid }}",
+          "mode": "id"
+        },
+        "eventId": "={{ $('select_booking').item.json.calendar_event_id }}",
+        "updateFields": {
+          "end": "={{ $('Calculate end time/validate date').item.json.end_timestamp.toDateTime()}}",
+          "sendUpdates": "all",
+          "start": "={{ $('Calculate end time/validate date').item.json.start_timestamp.toDateTime()}}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1584,
+        288
+      ],
+      "id": "3b4d85b5-8ea9-41fe-b673-1a6d835b9932",
+      "name": "Update an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "lMHwqk7HXAw8dtoh",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "customer_phone"
+            },
+            {
+              "name": "selected_index"
+            },
+            {
+              "name": "service_duration"
+            },
+            {
+              "name": "therapist_name"
+            },
+            {
+              "name": "new_date"
+            },
+            {
+              "name": "new_time"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -208,
+        192
+      ],
+      "id": "8bbe729e-d7d6-44a7-9a1a-8148b7dc3c05",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "content": "## Reschedule Booking\n**Changes an existing booking to a new date/time.\nChecks barber availability first before updating record.\nTrigger: Called when user requests to move appointment.\nOutput: Updated booking details + reschedule confirmation.",
+        "height": 192,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -96,
+        400
+      ],
+      "typeVersion": 1,
+      "id": "6b41b5f7-03eb-4c25-b5d6-b933f2924d72",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8240e119-7652-4018-99a2-cccae8be9a64",
+              "leftValue": "={{ $json.is_in_past }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        192
+      ],
+      "id": "7c8901e5-1196-49d9-b048-49a392017593",
+      "name": "If valid time"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst data = $input.first().json;\n\nreturn [{\n  json: {\n    available: false,\n    reason: \"time_in_past\",\n    message: `Cannot book appointments in the past. Requested: ${data.date} at ${data.start_time}`,\n    requested: {\n      date: data.date,\n      time: data.start_time,\n      service: data.service\n    },\n    alternatives: []\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        96
+      ],
+      "id": "1d67385e-cf8b-487a-a860-bb6e419b21e7",
+      "name": "Format output"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get inputs\nconst input = $('When Executed by Another Workflow').first().json;\nconst requestedDate = input.new_date; // \"2025-10-19\"\nconst requestedTime = input.new_time; // \"14:00\"\nconst duration = $('Get service duration').first().json.duration_mins; // 30\n\n// Create start datetime\nconst startDateTime = new Date(`${requestedDate}T${requestedTime}:00`);\n\n// Calculate end datetime\nconst endDateTime = new Date(startDateTime.getTime() + (duration * 60 * 1000));\n\n// Get current time in Africa/Lagos\nconst now = new Date();\n\n\n// Check if requested time is in the past or now\nconst isInPast = startDateTime <= now;\n\n// Format timestamps for Google Calendar (ISO 8601 format)\nconst startTimestamp = startDateTime.toISOString().replace('Z', '+01:00');\nconst endTimestamp = endDateTime.toISOString().replace('Z', '+01:00');\n// Return all data including validation flag and timestamps\nreturn [{\n  json: {\n    date: requestedDate,\n    start_time: requestedTime,\n    end_time: endDateTime.toTimeString().substring(0, 5), // \"14:30\" for reference\n    duration: duration,\n    service: input.service,\n    therapist_name: input.therapist_name,\n    is_in_past: isInPast,\n    start_timestamp: startTimestamp, // Use this for Google Calendar\n    end_timestamp: endTimestamp      // Use this for Google Calendar\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        192
+      ],
+      "id": "7f68ed73-a63f-4386-b4bc-f9b90083d887",
+      "name": "Calculate end time/validate date"
+    },
+    {
+      "parameters": {
+        "jsCode": "const bookingDetails = $('Get booking details').first().json;\nconst input = $('Calculate end time/validate date').first().json;\n\nreturn [{\n  json: {\n    success: true,\n    booking_id: bookingDetails.booking_id,\n    message: \"Booking rescheduled successfully\",\n    old_booking: {\n      date: bookingDetails.date,\n      time: bookingDetails.time\n    },\n    new_booking: {\n      date: input.date,\n      time: input.start_time,\n      service: bookingDetails.service,\n      therapist: bookingDetails.therapist_name\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        288
+      ],
+      "id": "3e6b6c32-55f5-4070-86a4-0001f6cc0662",
+      "name": "format output"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 673703495,
+          "mode": "list",
+          "cachedResultName": "services_pricing_duration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=673703495"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "service_name(en)",
+              "lookupValue": "={{ $json.service }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        912,
+        192
+      ],
+      "id": "13158708-ca4d-4331-889d-6b1515785e3d",
+      "name": "Get service duration",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1632282617,
+          "mode": "list",
+          "cachedResultName": "bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1632282617"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "calendar_event_id",
+              "lookupValue": "={{ $json.calendar_event_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        688,
+        192
+      ],
+      "id": "6963db72-c0b1-4bab-a3fc-5b762f0aecc0",
+      "name": "Get booking details",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1632282617,
+          "mode": "list",
+          "cachedResultName": "bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=1632282617"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "gcal_uid": "={{ $json.organizer.email }}",
+            "calendar_event_id": "={{ $json.id }}",
+            "date_timestamp": "={{ $json.end.dateTime }}",
+            "date": "={{ $json.start.dateTime.toDateTime().format('dd-MM-yyyy') }}",
+            "time": "={{ $json.start.dateTime.toDateTime().format('HH:mm') }}",
+            "updated_at": "={{ $json.updated.toDateTime().setZone('Africa/lagos') }}"
+          },
+          "matchingColumns": [
+            "calendar_event_id"
+          ],
+          "schema": [
+            {
+              "id": "gcal_uid",
+              "displayName": "gcal_uid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "calendar_event_id",
+              "displayName": "calendar_event_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "platform_id",
+              "displayName": "platform_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "shop_name",
+              "displayName": "shop_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "therapist_name",
+              "displayName": "therapist_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date_timestamp",
+              "displayName": "date_timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "duration_mins",
+              "displayName": "duration_mins",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1808,
+        288
+      ],
+      "id": "9497b878-528b-418f-8ec9-db394669b106",
+      "name": "Update Bookings",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const input = item.json;\n\n  const requiredFields = [\n    \"customer_phone\",\n    \"new_date\",\n    \"new_time\",\n    \"selected_index\"\n  ];\n\n  // Find missing or null fields\n  const missing = requiredFields.filter(\n    f => input[f] === null || input[f] === undefined || input[f] === \"\"\n  );\n\n  if (missing.length > 0) {\n    return {\n      json: {\n        status: \"error\",\n        message: `Missing or null values for: ${missing.join(\", \")}`\n      }\n    };\n  }\n\n  // Return parsed and validated data\n  return {\n    json: {\n      status: \"ok\",\n      customer_phone: input.customer_phone,\n      service: input.service,\n      service_duration: input.service_duration,\n      barber_name: input.barber_name,\n      date: input.new_date,\n      time: input.new_time,\n      selected_index: input.selected_index\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        192
+      ],
+      "id": "565fdc04-65a2-4a38-8685-8f72f84c8479",
+      "name": "Parse Input"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "nPBVeZjTXQs5mlLI",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/nPBVeZjTXQs5mlLI",
+          "cachedResultName": "spa_get_booking"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "confirmed",
+            "customer_phone": "={{ $json.customer_phone }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        192
+      ],
+      "id": "4e9fda8b-26df-43cc-8928-b7ca768299fc",
+      "name": "Call 'spa_get_booking'"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all bookings and selected index from input\nconst bookings = $input.all() || [];\nconst selectedIndex = parseInt($('When Executed by Another Workflow').first().json.selected_index, 10) - 1; // 1-based index\nif (!bookings.length) {\n  return [{ json: { error: \"No bookings found\" } }];\n}\n\nif (selectedIndex < 0 || selectedIndex >= bookings.length) {\n  return [{ json: { error: \"Invalid booking index\" } }];\n}\n\nconst selected = bookings[selectedIndex];\n\n//Format booking info for rescheduling\nreturn [{\n  json: {\n    gcal_uid: selected.json.gcal_uid,\n    calendar_event_id: selected.json.calendar_event_id,\n    service: selected.json.service,\n    therapist_name: selected.json.therapist_name,\n    shop_name: selected.json.shop_name,\n    customer_email: selected.json.email,\n    customer_name: selected.json.customer_name,\n    old_date: selected.json.date,\n    old_time: selected.json.time,\n    new_date:$('When Executed by Another Workflow').first().json.new_date,\n    new_time: $('When Executed by Another Workflow').first().json.new_time,\n    status: \"ready_for_reschedule\",\n    selectedIndex\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        192
+      ],
+      "id": "b7346d3e-c15b-4e12-a118-6825080cdbcd",
+      "name": "select_booking"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "customer_phone": "123456789",
+          "selected_index": "2",
+          "therapist_name": "Steph",
+          "new_date": "2025-12-17",
+          "new_time": "15:00"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Update an event": {
+      "main": [
+        [
+          {
+            "node": "Update Bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If valid time": {
+      "main": [
+        [
+          {
+            "node": "Format output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate end time/validate date": {
+      "main": [
+        [
+          {
+            "node": "If valid time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get service duration": {
+      "main": [
+        [
+          {
+            "node": "Calculate end time/validate date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get booking details": {
+      "main": [
+        [
+          {
+            "node": "Get service duration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Bookings": {
+      "main": [
+        [
+          {
+            "node": "format output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Input": {
+      "main": [
+        [
+          {
+            "node": "Call 'spa_get_booking'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'spa_get_booking'": {
+      "main": [
+        [
+          {
+            "node": "select_booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "select_booking": {
+      "main": [
+        [
+          {
+            "node": "Get booking details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "641c2c68-94c7-412e-8e38-75efcb338719",
+  "meta": {
+    "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"
+  },
+  "id": "1hq8zlzJBuAkDStT",
+  "tags": []
+}

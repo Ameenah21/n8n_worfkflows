@@ -1,4 +1,6 @@
 # Spa Booking & Reception System (n8n)
+![The main workflow with subworkflows](n8n_worfkflows/spa_booking/Screenshot 2025-12-20 at 14.32.54.png)
+
 An n8n-based booking and receptionist system designed to manage availability, bookings, rescheduling, and cancellations across multiple therapists and calendars, while maintaining consistency between Google Calendar, a central database, and customer records.
 
 Although built for a spa (with therapists as service providers), the system is service-agnostic and can be adapted for salons, clinics, studios, or any appointment-based business.
@@ -49,7 +51,12 @@ Built for a spa, but service providers can represent:
 Doctors, Stylists, Instructors, Consultants
 
 ### System Architecture (High Level)
-
+#### Agent Interface
+A central agent handles user interaction and workflow orchestration.Currently integrated with Instagram DMs, but designed to be channel-agnostic and easily embedded into:
+    - Websites
+    - Telegram / WhatsApp
+    - Voice agents
+Interaction channels can be swapped without changing core booking logic.
 ## Workflows
 ### 1. check_availability
 Purpose:Check if a requested time slot is available for a given service and therapist (or across all therapists).
@@ -139,11 +146,9 @@ Flow
 7. Return formatted confirmation
 
 ### 6. cancel_booking:
-Purpose:
-Cancel an existing booking cleanly.
+Purpose: Cancel an existing booking cleanly.
 
 Inputs: customer_phone, selected_index
-
 Flow
 1. Retrieve bookings via get_booking
 2. Select booking by index
@@ -151,8 +156,25 @@ Flow
 4. Update booking record status
 5. Return confirmation output
 
+### 7. daily_consistency_check:
+Purpose: Detect booking conflicts that slip through safeguards and notify the admin.
+
+Trigger
+Scheduled (runs daily)
+Flow
+1. Loop through all service provider calendars
+2. Scan for:
+    - Double bookings
+    - Multiple overlapping bookings
+    - Generate a daily consistency report
+    - Send an email to the admin: No conflicts found, or Conflict detected with:
+    - Calendar(s) affected
+    - Booking details (time, service, provider)
+
+This acts as a safety net to ensure long-term consistency across calendars and catch edge cases caused by concurrency or external edits.
+
 ## Tech Stack & Scalability
-** Current stack
+__ Current stack
 - n8n – workflow orchestration
 - Google Calendar – availability and bookings
 - Google Sheets – lightweight database for bookings and customer records
