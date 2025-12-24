@@ -14,7 +14,7 @@ This repository is meant to:
 
 Each folder represents one complete n8n project.
 │
-├── barber-booking-bot/ # AI booking assistant with scheduling + rescheduling flows
+├── spa-booking-bot/ # AI booking assistant with scheduling + rescheduling flows
 ├── Meeting summaries and to-do lists with asana, gmail,slack integration
 └── README.md # This file
 
@@ -47,15 +47,15 @@ All projects follow a few consistent patterns:
 
 ---
 
-## 🧱 Example Project: Barber Booking Bot
+## 🧱 Example Project: Spa Booking Bot
 
 An AI-powered booking assistant that:
 - Handles scheduling, rescheduling, and cancellations  
-- Manages availability checks for multiple barbers  
+- Manages availability checks for multiple therapists  
 - Uses modular subflows for actions like `get_booking`, `check_availability`, and `update_booking`  
 - Includes prompt and tool documentation for both the main agent and its subflows
 
-👉 See [barber-booking-bot/README.md](./barber-booking-bot/README.md) for detailed flow and setup.
+👉 See [barber-booking-bot/README.md](./spa_booking/README.md) for detailed flow and setup.
 
 ---
 
