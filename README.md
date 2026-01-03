@@ -55,7 +55,7 @@ An AI-powered booking assistant that:
 - Uses modular subflows for actions like `get_booking`, `check_availability`, and `update_booking`  
 - Includes prompt and tool documentation for both the main agent and its subflows
 
-👉 See [barber-booking-bot/README.md](./spa_booking/README.md) for detailed flow and setup.
+👉 See [spa-booking-bot/README.md](./spa_booking/README.md) for detailed flow and setup.
 
 ---
 
