@@ -1,5 +1,5 @@
 # Spa Booking & Reception System (n8n)
-![Main workflow with subworkflows](n8n_worfkflows/spa_booking/main_agent_whatsapp.png)
+![Main workflow with subworkflows](https://github.com/Ameenah21/n8n_worfkflows/blob/main/spa_booking/main_agent_whatsapp.png)
 
 An n8n-based booking and receptionist system designed to manage availability, bookings, rescheduling, and cancellations across multiple therapists and calendars, while maintaining consistency between Google Calendar, a central database, and customer records.
 
