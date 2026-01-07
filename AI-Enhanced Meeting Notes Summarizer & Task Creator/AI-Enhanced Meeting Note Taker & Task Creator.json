@@ -1,0 +1,1516 @@
+{
+  "name": "AI-Enhanced Meeting Note Taker & Task Creator",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "16G1BlY9suaC4GvxyGQt7AwLWIwkV2SFZ",
+          "mode": "list",
+          "cachedResultName": "meetings",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/16G1BlY9suaC4GvxyGQt7AwLWIwkV2SFZ"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        496
+      ],
+      "id": "a935963a-843f-4229-959d-bddd3323c44a",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hBSgC996aieAtxxV",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workspace": "1211245400867985",
+        "name": "={{ $json.responsible_party }}",
+        "otherProperties": {
+          "assignee": "=me",
+          "assignee_status": "inbox",
+          "due_on": "={{ $json.due_date.toDateTime() }}",
+          "notes": "={{ $('Approved Summary').item.json.Summary }}"
+        }
+      },
+      "type": "n8n-nodes-base.asana",
+      "typeVersion": 1,
+      "position": [
+        2688,
+        -64
+      ],
+      "id": "128fd885-43aa-4c02-8d41-626de25da447",
+      "name": "Create a task",
+      "credentials": {
+        "asanaApi": {
+          "id": "VZS01FQ0z23H2hmg",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -256,
+        496
+      ],
+      "id": "62d6aa31-0836-4e6a-8c79-8b16e379d871",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hBSgC996aieAtxxV",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        496
+      ],
+      "id": "bfd10013-08ca-48e1-8229-d456e1fd84e6",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        720
+      ],
+      "id": "0207bcd8-ba9d-4c48-a19f-11b8c4f0fb36",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ng8g6PxrpEheDJw4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "aminatlawal21@gmail.com",
+        "subject": "=Meeting Notes for approval: {{ $json.title_of_meeting }}",
+        "message": "=<p><strong>Title of Meeting:</strong><br>\n{{ $json.title_of_meeting }}\n</p>\n\n<p><strong>Date:</strong> \n{{ $json.date_of_meeting }}\n</p>\n\n\n<p><strong>Date:</strong> \n{{ $json.attendees }}\n</p>\n\n\n<p><strong>Summary:</strong><br>\n  {{ $json.summary }}\n</p>\n\n<p><strong>Decisions:</strong><br>\n  {{ $json.decisions }}\n</p>\n\n<p><strong>Action Items:</strong></p>\n<ul>\n  <li>{{ $json.action_items[0].task }} — assigned to {{ $json.action_items[0].responsible_party }}, due by {{ $json.action_items[0].due_date }}</li>\n  <li>{{ $json.action_items[1].task }} — assigned to {{ $json.action_items[1].responsible_party }}, due by {{ $json.action_items[1].due_date }}</li>\n</ul>\n<ul>\n",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Whats your feedback",
+              "placeholder": "Approved",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        768,
+        496
+      ],
+      "id": "511e76a7-1cd8-4588-91e4-e1887177a874",
+      "name": "Send message and wait for response",
+      "webhookId": "e89d29d9-3625-48d8-89fc-5e89d43bf3b2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7eyLGUmr3zP4LZpB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"title_of_meeting\": \"string\",\n  \"date_of_meeting\": \"YYYY-MM-DD\",\n  \"attendees\": [\"string\"],\n  \"summary\": \"string\",\n  \"action_items\": [\n    {\n      \"task\": \"string\",\n      \"responsible_party\": \"string\",\n      \"due_date\": \"string\"\n    }\n  ],\n  \"airtable_tasks\": \"string\",  \n  \"decisions\": [\"string\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        720
+      ],
+      "id": "7110f200-94b3-4ecd-bd63-185acb6cd353",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data['Whats your feedback'] }}",
+                    "rightValue": "approved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f0dc0bb1-8f22-4343-aff9-bcde8f19ac40"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "15ab100b-7ac4-4aab-8d42-b5b75c61d434",
+                    "leftValue": "={{ $json.data['Whats your feedback'] }}",
+                    "rightValue": "approved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        992,
+        400
+      ],
+      "id": "84dd8449-9117-4da7-94af-498c50cb2156",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "U09DRL784D9",
+          "mode": "list",
+          "cachedResultName": "aminatlawal21"
+        },
+        "text": "=📌 *Title of Meeting:* {{ $json['Title of Meeting'] }}\n\n🗓️ *Date:*{{ $json.Date }}\n\n📝 *Summary:*  \n{{ $json.Summary }}\n\n✅ *Decisions:*  \n{{ $json.Decisions }}\n🔧 *Action Items:*  \n-{{ $json.Action_items[0].task }} → Assigned to\n{{ $json.Action_items[0].responsible_party }} (Due: \n{{ $json.Action_items[0].due_date }})  \n- {{ $json.Action_items[1].task }} → Assigned to {{$json.Action_items[1].responsible_party }} (Due: {{ $json.Action_items[1].due_date }})\n{{ $json.Action_items[1].due_date }}\n{{ $json.Action_items[1].responsible_party }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2688,
+        144
+      ],
+      "id": "af8f5b35-c7bb-447e-ae43-73af4ad57473",
+      "name": "Send a message1",
+      "webhookId": "16b59f0c-1c25-4489-bb01-0d63a02191e2",
+      "credentials": {
+        "slackApi": {
+          "id": "2AiRUe18KyanQWyq",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        448
+      ],
+      "id": "ebb8639e-a080-49b7-a565-fe3faef5debd",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ng8g6PxrpEheDJw4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"title_of_meeting\": \"string\",\n  \"date_of_meeting\": \"YYYY-MM-DD\",\n  \"attendees\": [\"string\"], \n  \"summary\": \"string\",\n  \"action_items\": [\n    {\n      \"task\": \"string\",\n      \"responsible_party\": \"string\",\n      \"due_date\": \"string\"\n    }\n  ],\n  \"decisions\": [\"string\"]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1360,
+        448
+      ],
+      "id": "3d2343aa-6cb0-46fe-83c6-39dd6c65f973",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "sendTo": "aminatlawal21@gmail.com",
+        "subject": "=Meeting Notes:{{ $json['Title of Meeting'] }}",
+        "message": "=Hello everyone,\n\nThank you for attending the meeting. Please find below the notes, key decisions, and assigned action items:\n<p><strong>📌 Title of Meeting:</strong><br> {{ $json['Title of Meeting'] }}\n\n<p><strong>🗓️ Date:</strong>:{{ $json.Date }}\n<p>📝 Summary:</strong><br>\n{{ $json.Summary }}\n<p>✅ Decisions:</strong><br>\n{{ $json.Decisions }}\n\n<p>🔧 Action Items:</strong><br>\n<ul>\n  <li>{{ $json.Action_items[0].task }} — assigned to {{ $json.Action_items[0].responsible_party }}, due by {{ $json.Action_items[0].due_date }}</li>\n  <li>{{$json.Action_items[1].task }} — assigned to {{$json.Action_items[1].responsible_party }}, due by {{ $json.Action_items[1].due_date }}</li>\n</ul>\n\nIf you have any questions or updates regarding your tasks, please reply to this thread.\n\n<br>Best regards,</br>\n<br>[Your Name]</br>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2464,
+        448
+      ],
+      "id": "45b5e727-103f-4767-a59c-3384344f1b49",
+      "name": "Send a message",
+      "webhookId": "f33e69df-37c2-4d75-b164-957a6e5432f2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7eyLGUmr3zP4LZpB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appmrqk7kHYF9zpjs",
+          "mode": "list",
+          "cachedResultName": "Appointments_base",
+          "cachedResultUrl": "https://airtable.com/appmrqk7kHYF9zpjs"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblQzeLPFNq5Aniu0",
+          "mode": "list",
+          "cachedResultName": "Meetings",
+          "cachedResultUrl": "https://airtable.com/appmrqk7kHYF9zpjs/tblQzeLPFNq5Aniu0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Meeting Title": "={{ $('Approved Summary').item.json['Title of Meeting'] }}",
+            "Meeting Date": "={{ $('Approved Summary').item.json.Date }}",
+            "Summary": "={{ $json.Summary }}",
+            "Meeting Tasks": "={{ $json['Airtable Tasks'] }}",
+            "Decisions": "={{ $json.Decisions }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Meeting Title",
+              "displayName": "Meeting Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Meeting Date",
+              "displayName": "Meeting Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Attendees",
+              "displayName": "Attendees",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Decisions",
+              "displayName": "Decisions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Customer Enquiries",
+              "displayName": "Customer Enquiries",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Appointments",
+              "displayName": "Appointments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Meeting Tasks",
+              "displayName": "Meeting Tasks",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        2464,
+        640
+      ],
+      "id": "be6f1e17-0055-49bc-8dbd-e66661becd24",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YKCyxFfSsQRgO7fc",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Trigger\n**Watch for new meeting notes uploaded to Google Drive",
+        "height": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -560,
+        368
+      ],
+      "typeVersion": 1,
+      "id": "bc7fbb59-4e61-4537-a54c-741784e925ca",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Extract Notes\n** AI agent parses content → summary, decisions, action items.",
+        "height": 400,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -160,
+        256
+      ],
+      "typeVersion": 1,
+      "id": "d35aea85-908b-4e4c-9723-5af9d37d0828",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Send for feedback\n**DEmail organizer with summary & action items.\n\n**Organizer can approve or suggest edits.",
+        "height": 656,
+        "width": 416
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        656,
+        144
+      ],
+      "typeVersion": 1,
+      "id": "98d8e2e2-eff5-4bd8-bcf5-ba89575180d0",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Approval Flow\n\nIf approved → create tasks.\n\nIf edits → loop back to AI agent for update.\n\n🟨 Task Creation\n\nCreate tasks in Asana:Assign to responsible parties.\n\nSet due dates if provided.\n\nNotify Participants:Send personalized task reminders (via Email, Slack, Teams).",
+        "height": 560,
+        "width": 880
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1424,
+        -224
+      ],
+      "typeVersion": 1,
+      "id": "0ede88c1-228c-4358-9d18-1f68f08a419d",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        992,
+        592
+      ],
+      "id": "6a3b7162-9e03-477c-bedb-11ae1fd3653e",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "aminatlawal21@gmail.com",
+        "subject": "=Meeting Notes for approval: ( {{ $json.output.title_of_meeting }})",
+        "message": "=<p><strong>Title of Meeting:</strong><br>\n  {{ $json.output['title_of_meeting'] }}\n</p>\n\n<p><strong>Date:</strong> {{ $json.output['date_of_meeting'] }}</p>\n\n<p><strong>Summary:</strong><br>\n  {{ $json.output.summary }}\n</p>\n\n<p><strong>Decisions:</strong><br>\n  {{ $json.output.decisions }}\n</p>\n\n<p><strong>Action Items:</strong></p>\n<ul>\n  <li>{{ $json.output.action_items[0].task }} — assigned to {{ $json.output.action_items[0].responsible_party }}, due by {{ $json.output.action_items[0].due_date }}</li>\n  <li>{{ $json.output.action_items[1].task }} — assigned to {{ $json.output.action_items[1].responsible_party }}, due by {{ $json.output.action_items[1].due_date }}</li>\n</ul>\n",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Whats your feedback",
+              "placeholder": "Approved",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1568,
+        80
+      ],
+      "id": "5953e39c-e577-48ae-8eab-f099b5163247",
+      "name": "Send message and wait for response1",
+      "webhookId": "e89d29d9-3625-48d8-89fc-5e89d43bf3b2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7eyLGUmr3zP4LZpB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "adc04bee-22aa-4c01-bd6c-e548e076553b",
+              "name": "Title of Meeting",
+              "value": "={{ $('Code1').item.json.title_of_meeting }}",
+              "type": "string"
+            },
+            {
+              "id": "9249a414-b59e-42c6-afd9-3e0cc840f5bb",
+              "name": "Date",
+              "value": "={{ $('Code1').item.json.date_of_meeting }}",
+              "type": "string"
+            },
+            {
+              "id": "913bd5e9-7c44-4d72-a112-52aab4a99fe2",
+              "name": "Action_items",
+              "value": "={{ $('Code1').item.json.action_items }}",
+              "type": "array"
+            },
+            {
+              "id": "8dae17d1-666a-43bf-95b2-ceb720f94b51",
+              "name": "Decisions",
+              "value": "={{ $('Summarizer Agent').item.json.output.decisions.join(\"**\") }}",
+              "type": "string"
+            },
+            {
+              "id": "0884f7c6-4da0-49f9-a7fd-9f51a15763ec",
+              "name": "Summary",
+              "value": "={{ $('Summarizer Agent').item.json.output.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "d7e07313-2b31-4e7c-ac57-e1b87762207d",
+              "name": "Airtable Tasks",
+              "value": "={{ $('Code1').item.json.airtable_tasks }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2240,
+        288
+      ],
+      "id": "d8718dce-05f3-4bdb-ab8c-48f4e611ef7b",
+      "name": "Approved Summary"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data['Whats your feedback'] }}",
+                    "rightValue": "approved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f0dc0bb1-8f22-4343-aff9-bcde8f19ac40"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "15ab100b-7ac4-4aab-8d42-b5b75c61d434",
+                    "leftValue": "={{ $json.data['Whats your feedback'] }}",
+                    "rightValue": "approved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1792,
+        224
+      ],
+      "id": "5bd0994d-8d4d-4697-8b36-a7c0cc4bc304",
+      "name": "Switch2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extract from File').item.json.text }}, \n{{ $('Summarizer Agent').item.json.output }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an **assistant that improves meeting summaries** based on organizer feedback.  \n\n### Input Provided:\n- Raw meeting notes  \n- Original summary, decisions, and action items  \n- Feedback from the meeting organizer  \n\n### Your Task:\n1. Incorporate the feedback into the meeting **summary**, **decisions**, and **action items**.  \n2. Keep all original details unless the feedback instructs removal.  \n3. Return the **corrected version in valid JSON** (same schema as original).  \n4. Do not include commentary, markdown, or text outside the JSON.  "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1216,
+        224
+      ],
+      "id": "b7d0a263-ea36-4543-bf88-75863a546043",
+      "name": "Feedback Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an **expert Meeting Summarizer and Action Item Extractor**.  \nYour task is to analyze raw meeting notes and convert them into a **structured JSON object**.  \n\n### Goals:\n1. **Summarize** the meeting’s key discussion points and outcomes.  \n2. ** Meeting attendees\n3. **Extract all action items** with task description, responsible party, and due date (if mentioned).  \n4. **List all final decisions** made during the meeting.  \n5. **Capture meeting metadata** (title, attendees, date). \n6. Tasks for airtable in text\n7. **Output strictly in JSON** — no extra commentary, no markdown, no code blocks.  \n\n### Guidelines:\n- **Summary**: Write 1–3 sentences covering the main topics and outcomes.  \n- **Attendees**: Extract all names mentioned as participants. If none are found, return an empty array.  \n- **Action Items**: Each must include:\n  - `task` (string, what needs to be done)  \n  - `responsible_party` (string, person accountable; use `\"N/A\"` if not specified)  \n  - `due_date` (string in `YYYY-MM-DD` format if provided, otherwise `\"N/A\"`) \n** Tasks text for airtable, do not make it a list.\n- **Decisions**: Only include confirmed outcomes, not discussion points.  \nDo not include backticks, markdown, or natural language outside the JSON. Use the schema provided in the structured format. "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        192,
+        496
+      ],
+      "id": "373b0876-47a8-4b20-92cd-008a37b696e9",
+      "name": "Summarizer Agent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "dbe6ff83-4365-451c-a765-fd705f09716a",
+              "leftValue": "={{ $json.data['Whats your feedback'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "28188840-6e18-442c-8ec4-ec6f828ead6b",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        400
+      ],
+      "id": "136fbdc2-194e-4b52-9486-dc7edbdedccc",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "Action_items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        -304
+      ],
+      "id": "9c3836ec-d77c-4baf-b669-5b88d5bed687",
+      "name": "Tasks"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Function node: Normalize AI output to fixed schema\n\n// Expected schema:\n// {\n//   title_of_meeting: string,\n//   date_of_meeting: string (YYYY-MM-DD),\n//   attendees: [string],\n//   summary: string,\n//   action_items: [\n//     { task: string, responsible_party: string, due_date: string }\n//   ],\n//   airtable_tasks: string,\n//   decisions: [string]\n// }\n\nconst raw = $input.first().json.output;\n\n// Helper: normalize array of strings\nfunction normalizeStringArray(value) {\n  if (Array.isArray(value)) return value.map(String);\n  if (typeof value === \"string\" && value.trim() !== \"\") return [value];\n  return [];\n}\n\n// Helper: normalize action items\nfunction normalizeActionItems(items) {\n  if (!Array.isArray(items)) return [];\n  return items.map(item => ({\n    task: item.task || item.name || item.title || \"\",\n    responsible_party: item.responsible_party || item.assignee || item.owner || \"\",\n    due_date: item.due_date || item.deadline || \"\"\n  }));\n}\n\n// Build normalized object\nconst normalized = {\n  title_of_meeting: raw.title_of_meeting || raw.title || raw.meeting_title || \"\",\n  date_of_meeting: raw.date_of_meeting || raw.date || raw.meeting_date || \"\",\n  attendees: normalizeStringArray(raw.attendees || raw.participants),\n  summary: raw.summary || raw.meeting_summary || \"\",\n  action_items: normalizeActionItems(raw.action_items || raw.tasks || raw.airtable_tasks_list || []),\n  airtable_tasks: raw.airtable_tasks || raw.tasks_for_airtable || \"\",\n  decisions: normalizeStringArray(raw.decisions || raw.outcomes)\n};\n\nreturn [{ json: normalized }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        496
+      ],
+      "id": "39cce288-dd3c-4b02-93c6-fc3e31b84d38",
+      "name": "Code1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2896,
+        -320
+      ],
+      "id": "a6ac0d3e-bf84-4b5b-87af-6ebe09d33d5e",
+      "name": "Merge1"
+    }
+  ],
+  "pinData": {
+    "Download file": [
+      {
+        "json": {
+          "parents": [
+            "16G1BlY9suaC4GvxyGQt7AwLWIwkV2SFZ"
+          ],
+          "lastModifyingUser": {
+            "displayName": "Aminat Lawal",
+            "kind": "drive#user",
+            "me": true,
+            "permissionId": "08328149815213221702",
+            "emailAddress": "aminatlawal21@gmail.com",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocK7SWQ2f8QanFOVgVQSsIO9Ha2ewo0lCEXahBpePHpMZzXZew=s64"
+          },
+          "owners": [
+            {
+              "displayName": "Aminat Lawal",
+              "kind": "drive#user",
+              "me": true,
+              "permissionId": "08328149815213221702",
+              "emailAddress": "aminatlawal21@gmail.com",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocK7SWQ2f8QanFOVgVQSsIO9Ha2ewo0lCEXahBpePHpMZzXZew=s64"
+            }
+          ],
+          "permissions": [
+            {
+              "kind": "drive#permission",
+              "id": "08328149815213221702",
+              "type": "user",
+              "emailAddress": "aminatlawal21@gmail.com",
+              "role": "owner",
+              "displayName": "Aminat Lawal",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocK7SWQ2f8QanFOVgVQSsIO9Ha2ewo0lCEXahBpePHpMZzXZew=s64",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "spaces": [
+            "drive"
+          ],
+          "capabilities": {
+            "canAcceptOwnership": false,
+            "canAddChildren": false,
+            "canAddMyDriveParent": false,
+            "canChangeCopyRequiresWriterPermission": true,
+            "canChangeItemDownloadRestriction": true,
+            "canChangeSecurityUpdateEnabled": false,
+            "canChangeViewersCanCopyContent": true,
+            "canComment": true,
+            "canCopy": true,
+            "canDelete": true,
+            "canDisableInheritedPermissions": false,
+            "canDownload": true,
+            "canEdit": true,
+            "canEnableInheritedPermissions": true,
+            "canListChildren": false,
+            "canModifyContent": true,
+            "canModifyContentRestriction": true,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": true,
+            "canModifyLabels": false,
+            "canMoveChildrenWithinDrive": false,
+            "canMoveItemIntoTeamDrive": true,
+            "canMoveItemOutOfDrive": true,
+            "canMoveItemWithinDrive": true,
+            "canReadLabels": false,
+            "canReadRevisions": true,
+            "canRemoveChildren": false,
+            "canRemoveContentRestriction": false,
+            "canRemoveMyDriveParent": true,
+            "canRename": true,
+            "canShare": true,
+            "canTrash": true,
+            "canUntrash": true
+          },
+          "permissionIds": [
+            "08328149815213221702"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "kind": "drive#file",
+          "id": "1QfbXZvuiBdDqrI1MbRiSxIXkIk0_034T",
+          "name": "Meeting Title_ 1-Hour Consultation with Jane Doe.pdf",
+          "mimeType": "application/pdf",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "version": "3",
+          "webContentLink": "https://drive.google.com/uc?id=1QfbXZvuiBdDqrI1MbRiSxIXkIk0_034T&export=download",
+          "webViewLink": "https://drive.google.com/file/d/1QfbXZvuiBdDqrI1MbRiSxIXkIk0_034T/view?usp=drivesdk",
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/pdf",
+          "hasThumbnail": true,
+          "thumbnailLink": "https://lh3.googleusercontent.com/drive-storage/AJQWtBNAv7ob047lWFLHjo6LonPzsAvvniRE0JrT9lScX86GslYZ_NDyN2kQnoItHjB_cXmjFHdlGU3Uzrb2sH895i27hDJRQtuYfUlzFUzudHfOeSw=s220",
+          "thumbnailVersion": "1",
+          "viewedByMe": true,
+          "viewedByMeTime": "2025-09-03T09:39:14.846Z",
+          "createdTime": "2025-09-03T09:39:14.846Z",
+          "modifiedTime": "2025-09-03T09:38:55.000Z",
+          "modifiedByMeTime": "2025-09-03T09:38:55.000Z",
+          "modifiedByMe": true,
+          "shared": false,
+          "ownedByMe": true,
+          "viewersCanCopyContent": true,
+          "copyRequiresWriterPermission": false,
+          "writersCanShare": true,
+          "originalFilename": "Meeting Title_ 1-Hour Consultation with Jane Doe.pdf",
+          "fullFileExtension": "pdf",
+          "fileExtension": "pdf",
+          "md5Checksum": "97834448789395eddb338e4278bb474b",
+          "sha1Checksum": "a38beda7d460f6e7c548930ebf484edb1c70916d",
+          "sha256Checksum": "f876aa0ce76f6ba917723167a6a2034620732f7594736995550e81d57b02f571",
+          "size": "51686",
+          "quotaBytesUsed": "51686",
+          "headRevisionId": "0B5LYrvGMWat4ZkZjakFOMVg1WVBSOC8yR1BZQXdoK1lSUVlBPQ",
+          "isAppAuthorized": false,
+          "inheritedPermissionsDisabled": false
+        }
+      }
+    ],
+    "Extract from File": [
+      {
+        "json": {
+          "numpages": 1,
+          "numrender": 1,
+          "info": {
+            "PDFFormatVersion": "1.4",
+            "Language": "en_GB",
+            "EncryptFilterName": null,
+            "IsLinearized": false,
+            "IsAcroFormPresent": false,
+            "IsXFAPresent": false,
+            "IsCollectionPresent": false,
+            "IsSignaturesPresent": false,
+            "Title": "Meeting Title: 1-Hour Consultation with Jane Doe",
+            "Producer": "Skia/PDF m141 Google Docs Renderer"
+          },
+          "text": "Meeting Title: 1-Hour Consultation with Jane Doe\nDate: August 22, 2025\nAttendees:\n● John Doe (Service Provider)\n● Jane Doe (Client)\nMeeting Goal: Discuss Jane's content marketing strategy and identify automation\nopportunities.\nDiscussion Points:\n● Current pain points: manually managing social media posts and repurposing blog\ncontent.\n● Reviewed existing content assets and planned a content calendar for Q3.\n● Identified potential for a Zapier workflow to automate social media posting.\nAction Items:\n1. Draft a project proposal for the \"Content Repurposing\" automation.\n○ Responsible: John Doe\n○ Due Date: August 25, 2025\n2. Provide John access to social media accounts and blog data.\n○ Responsible: Jane Doe\n○ Due Date: August 24, 2025\nNext Steps:\n● Send the project proposal and cost estimate.\n● Schedule a follow-up call to review the proposal.",
+          "version": "5.3.31"
+        }
+      }
+    ],
+    "Google Drive Trigger": [
+      {
+        "json": {
+          "parents": [
+            "16G1BlY9suaC4GvxyGQt7AwLWIwkV2SFZ"
+          ],
+          "lastModifyingUser": {
+            "displayName": "Aminat Lawal",
+            "kind": "drive#user",
+            "me": true,
+            "permissionId": "08328149815213221702",
+            "emailAddress": "aminatlawal21@gmail.com",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocK7SWQ2f8QanFOVgVQSsIO9Ha2ewo0lCEXahBpePHpMZzXZew=s64"
+          },
+          "owners": [
+            {
+              "displayName": "Aminat Lawal",
+              "kind": "drive#user",
+              "me": true,
+              "permissionId": "08328149815213221702",
+              "emailAddress": "aminatlawal21@gmail.com",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocK7SWQ2f8QanFOVgVQSsIO9Ha2ewo0lCEXahBpePHpMZzXZew=s64"
+            }
+          ],
+          "permissions": [
+            {
+              "kind": "drive#permission",
+              "id": "08328149815213221702",
+              "type": "user",
+              "emailAddress": "aminatlawal21@gmail.com",
+              "role": "owner",
+              "displayName": "Aminat Lawal",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocK7SWQ2f8QanFOVgVQSsIO9Ha2ewo0lCEXahBpePHpMZzXZew=s64",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "spaces": [
+            "drive"
+          ],
+          "capabilities": {
+            "canAcceptOwnership": false,
+            "canAddChildren": false,
+            "canAddMyDriveParent": false,
+            "canChangeCopyRequiresWriterPermission": true,
+            "canChangeItemDownloadRestriction": true,
+            "canChangeSecurityUpdateEnabled": false,
+            "canChangeViewersCanCopyContent": true,
+            "canComment": true,
+            "canCopy": true,
+            "canDelete": true,
+            "canDisableInheritedPermissions": false,
+            "canDownload": true,
+            "canEdit": true,
+            "canEnableInheritedPermissions": true,
+            "canListChildren": false,
+            "canModifyContent": true,
+            "canModifyContentRestriction": true,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": true,
+            "canModifyLabels": false,
+            "canMoveChildrenWithinDrive": false,
+            "canMoveItemIntoTeamDrive": true,
+            "canMoveItemOutOfDrive": true,
+            "canMoveItemWithinDrive": true,
+            "canReadLabels": false,
+            "canReadRevisions": true,
+            "canRemoveChildren": false,
+            "canRemoveContentRestriction": false,
+            "canRemoveMyDriveParent": true,
+            "canRename": true,
+            "canShare": true,
+            "canTrash": true,
+            "canUntrash": true
+          },
+          "permissionIds": [
+            "08328149815213221702"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "kind": "drive#file",
+          "id": "1QfbXZvuiBdDqrI1MbRiSxIXkIk0_034T",
+          "name": "Meeting Title_ 1-Hour Consultation with Jane Doe.pdf",
+          "mimeType": "application/pdf",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "version": "3",
+          "webContentLink": "https://drive.google.com/uc?id=1QfbXZvuiBdDqrI1MbRiSxIXkIk0_034T&export=download",
+          "webViewLink": "https://drive.google.com/file/d/1QfbXZvuiBdDqrI1MbRiSxIXkIk0_034T/view?usp=drivesdk",
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/pdf",
+          "hasThumbnail": true,
+          "thumbnailLink": "https://lh3.googleusercontent.com/drive-storage/AJQWtBNoSYg_1J1mifeKiSnrFGp_Cdhku460wpbCq5V0lo3P01_BmehA32Sy8Epwu9FcaHovUQpgWac4hgLrF2Q6ne2NK4NOdiVhSgqIQKCyRljq0TA=s220",
+          "thumbnailVersion": "1",
+          "viewedByMe": true,
+          "viewedByMeTime": "2025-09-03T09:39:14.846Z",
+          "createdTime": "2025-09-03T09:39:14.846Z",
+          "modifiedTime": "2025-09-03T09:38:55.000Z",
+          "modifiedByMeTime": "2025-09-03T09:38:55.000Z",
+          "modifiedByMe": true,
+          "shared": false,
+          "ownedByMe": true,
+          "viewersCanCopyContent": true,
+          "copyRequiresWriterPermission": false,
+          "writersCanShare": true,
+          "originalFilename": "Meeting Title_ 1-Hour Consultation with Jane Doe.pdf",
+          "fullFileExtension": "pdf",
+          "fileExtension": "pdf",
+          "md5Checksum": "97834448789395eddb338e4278bb474b",
+          "sha1Checksum": "a38beda7d460f6e7c548930ebf484edb1c70916d",
+          "sha256Checksum": "f876aa0ce76f6ba917723167a6a2034620732f7594736995550e81d57b02f571",
+          "size": "51686",
+          "quotaBytesUsed": "51686",
+          "headRevisionId": "0B5LYrvGMWat4ZkZjakFOMVg1WVBSOC8yR1BZQXdoK1lSUVlBPQ",
+          "isAppAuthorized": false,
+          "inheritedPermissionsDisabled": false
+        }
+      }
+    ],
+    "Send a message1": [
+      {
+        "json": {
+          "ok": true,
+          "channel": "D09E04B3D60",
+          "message": {
+            "user": "U09E04B2J0L",
+            "type": "message",
+            "ts": "1758121505.252319",
+            "bot_id": "B09E04B2HRS",
+            "app_id": "A09DT7WFZ7F",
+            "text": ":pushpin: *Title of Meeting:* 1-Hour Consultation with Jane Doe\n:spiral_calendar_pad: *Date:* August 22, 2025\n\n:memo: *Summary:*  \nThe meeting focused on discussing Jane Doe's content marketing strategy and identifying automation opportunities. Key discussion points included current pain points with manual social media management and content repurposing, reviewing existing content assets, and planning a Q3 content calendar. A Zapier workflow for social media posting automation was also identified.\n\n:white_check_mark: *Decisions:*  \nPlanned a content calendar for Q3.,Identified potential for a Zapier workflow to automate social media posting.\n\n:wrench: *Action Items:*  \n- Draft a project proposal for the \"Content Repurposing\" automation.} → Assigned toJohn Doe (Due: August 25, 2025)  \n- Provide John access to social media accounts and blog data. → Assigned toJane Doe (Due: August 24, 2025)\nAugust 24, 2025\nJane Doe\n_Automated with this <https://hbhv3ekndosfu2oyjqeldk47.hooks.n8n.cloud/workflow/UMGCbHA2p8N9Ogg5?utm_source=n8n-internal&amp;utm_medium=powered_by&amp;utm_campaign=n8n-nodes-base.slack_9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443|n8n workflow>_",
+            "team": "T09DRL758HZ",
+            "bot_profile": {
+              "id": "B09E04B2HRS",
+              "app_id": "A09DT7WFZ7F",
+              "user_id": "U09E04B2J0L",
+              "name": "n8n",
+              "icons": {
+                "image_36": "https://a.slack-edge.com/80588/img/plugins/app/bot_36.png",
+                "image_48": "https://a.slack-edge.com/80588/img/plugins/app/bot_48.png",
+                "image_72": "https://a.slack-edge.com/80588/img/plugins/app/service_72.png"
+              },
+              "deleted": false,
+              "updated": 1757155094,
+              "team_id": "T09DRL758HZ"
+            },
+            "blocks": [
+              {
+                "type": "rich_text",
+                "block_id": "90XD1",
+                "elements": [
+                  {
+                    "type": "rich_text_section",
+                    "elements": [
+                      {
+                        "type": "emoji",
+                        "name": "pushpin",
+                        "unicode": "1f4cc"
+                      },
+                      {
+                        "type": "text",
+                        "text": " "
+                      },
+                      {
+                        "type": "text",
+                        "text": "Title of Meeting:",
+                        "style": {
+                          "bold": true
+                        }
+                      },
+                      {
+                        "type": "text",
+                        "text": " 1-Hour Consultation with Jane Doe\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "spiral_calendar_pad",
+                        "unicode": "1f5d3-fe0f"
+                      },
+                      {
+                        "type": "text",
+                        "text": " "
+                      },
+                      {
+                        "type": "text",
+                        "text": "Date:",
+                        "style": {
+                          "bold": true
+                        }
+                      },
+                      {
+                        "type": "text",
+                        "text": " August 22, 2025\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "memo",
+                        "unicode": "1f4dd"
+                      },
+                      {
+                        "type": "text",
+                        "text": " "
+                      },
+                      {
+                        "type": "text",
+                        "text": "Summary:",
+                        "style": {
+                          "bold": true
+                        }
+                      },
+                      {
+                        "type": "text",
+                        "text": "  \nThe meeting focused on discussing Jane Doe's content marketing strategy and identifying automation opportunities. Key discussion points included current pain points with manual social media management and content repurposing, reviewing existing content assets, and planning a Q3 content calendar. A Zapier workflow for social media posting automation was also identified.\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "white_check_mark",
+                        "unicode": "2705"
+                      },
+                      {
+                        "type": "text",
+                        "text": " "
+                      },
+                      {
+                        "type": "text",
+                        "text": "Decisions:",
+                        "style": {
+                          "bold": true
+                        }
+                      },
+                      {
+                        "type": "text",
+                        "text": "  \nPlanned a content calendar for Q3.,Identified potential for a Zapier workflow to automate social media posting.\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "wrench",
+                        "unicode": "1f527"
+                      },
+                      {
+                        "type": "text",
+                        "text": " "
+                      },
+                      {
+                        "type": "text",
+                        "text": "Action Items:",
+                        "style": {
+                          "bold": true
+                        }
+                      },
+                      {
+                        "type": "text",
+                        "text": "  \n- Draft a project proposal for the \"Content Repurposing\" automation.} → Assigned toJohn Doe (Due: August 25, 2025)  \n- Provide John access to social media accounts and blog data. → Assigned toJane Doe (Due: August 24, 2025)\nAugust 24, 2025\nJane Doe\n"
+                      },
+                      {
+                        "type": "text",
+                        "text": "Automated with this ",
+                        "style": {
+                          "italic": true
+                        }
+                      },
+                      {
+                        "type": "link",
+                        "url": "https://hbhv3ekndosfu2oyjqeldk47.hooks.n8n.cloud/workflow/UMGCbHA2p8N9Ogg5?utm_source=n8n-internal&amp;utm_medium=powered_by&amp;utm_campaign=n8n-nodes-base.slack_9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443",
+                        "text": "n8n workflow",
+                        "style": {
+                          "italic": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "message_timestamp": "1758121505.252319"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Summarizer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarizer Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Summarizer Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task": {
+      "main": [
+        []
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Feedback Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Feedback Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Feedback Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        []
+      ]
+    },
+    "Create a record": {
+      "main": [
+        []
+      ]
+    },
+    "Send message and wait for response1": {
+      "main": [
+        [
+          {
+            "node": "Switch2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved Summary": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feedback Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarizer Agent": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch2": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Feedback Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Approved Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Tasks": {
+      "main": [
+        [
+          {
+            "node": "Create a task",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "84cd623c-e716-4aec-a7cb-7c551229edbd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"
+  },
+  "id": "UMGCbHA2p8N9Ogg5",
+  "tags": []
+}
