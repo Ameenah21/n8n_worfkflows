@@ -1,0 +1,1036 @@
+{
+  "name": "spa_main_agent_whatsapp",
+  "nodes": [
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sender_wa_id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        184
+      ],
+      "id": "3267f0cd-bed8-461b-b1e0-2e15ee88f190",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        184
+      ],
+      "id": "d6eb3ff9-6e19-495c-a870-de98de9b8b98",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "hOV9nLuROzcUdgPH",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Sheet', ``, 'string') }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        800,
+        184
+      ],
+      "id": "ecc99d6c-9d17-4b56-883d-777eee0d554d",
+      "name": "knowledge_base",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "U3Nmaqc9IX00axyb",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/U3Nmaqc9IX00axyb",
+          "cachedResultName": "spa_create_booking"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customer_name', ``, 'string') }}",
+            "customer_email": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customer_email', ``, 'string') }}",
+            "customer_phone": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customer_phone', ``, 'string') }}",
+            "service": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('service', ``, 'string') }}",
+            "therapist": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('therapist', ``, 'string') }}",
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "time": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('time', ``, 'string') }}",
+            "service_duration": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('service_duration', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "therapist",
+              "displayName": "therapist",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "service_duration",
+              "displayName": "service_duration",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        928,
+        184
+      ],
+      "id": "a0c8ae89-d30e-49b7-833a-6933dbf81ed3",
+      "name": "Call 'spa_create_booking'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "1hq8zlzJBuAkDStT",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/1hq8zlzJBuAkDStT",
+          "cachedResultName": "spa_reschedule_ booking"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_phone": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customer_phone', ``, 'string') }}",
+            "selected_index": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('selected_index', ``, 'string') }}",
+            "service_duration": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('service_duration', ``, 'string') }}",
+            "new_date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('new_date', ``, 'string') }}",
+            "new_time": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('new_time', ``, 'string') }}",
+            "therapist_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('therapist_name', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "selected_index",
+              "displayName": "selected_index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "service_duration",
+              "displayName": "service_duration",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "therapist_name",
+              "displayName": "therapist_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "new_date",
+              "displayName": "new_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "new_time",
+              "displayName": "new_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        184
+      ],
+      "id": "00fb12b0-a61c-4763-ab47-f7bef1f3adbb",
+      "name": "spa_reschedule_booking"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "gBPMEOqob66qYEID",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/gBPMEOqob66qYEID",
+          "cachedResultName": "spa_check_availability"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "time": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('time', ``, 'string') }}",
+            "service": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('service', ``, 'string') }}",
+            "service_duration": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('service_duration', ``, 'string') }}",
+            "therapist_preference": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('therapist_preference', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "service_duration",
+              "displayName": "service_duration",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "therapist_preference",
+              "displayName": "therapist_preference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        184
+      ],
+      "id": "3f3f1612-48e9-45cb-a441-157dc36cea36",
+      "name": "Call 'check_availability'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "oDXc5QjXloPnExl7",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/oDXc5QjXloPnExl7",
+          "cachedResultName": "spa_cancel_booking"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_phone": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customer_phone', ``, 'string') }}",
+            "selected_index": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('selected_index', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "selected_index",
+              "displayName": "selected_index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        184
+      ],
+      "id": "46213320-5de0-4512-ab2c-48dff6f11a00",
+      "name": "Call 'spa_cancel_booking'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "nPBVeZjTXQs5mlLI",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/nPBVeZjTXQs5mlLI",
+          "cachedResultName": "spa_get_booking"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_phone": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customer_phone', ``, 'string') }}",
+            "status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('status', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        184
+      ],
+      "id": "0773a415-83a4-42e8-b239-955d27d5ff9e",
+      "name": "Call 'spa_get_booking'"
+    },
+    {
+      "parameters": {
+        "sendTo": "aminatlawal21@gmail.com",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        1568,
+        184
+      ],
+      "id": "421a66e5-6384-4678-bad8-c641fe9715db",
+      "name": "Escalation",
+      "webhookId": "a3dbcf6e-a19e-46b1-ac53-5f1b9e78115b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7eyLGUmr3zP4LZpB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "etU7Fxxu2NdWBLdo",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/etU7Fxxu2NdWBLdo",
+          "cachedResultName": "spa_get_all_availability"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "time": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('time', ``, 'string') }}",
+            "service": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('service', ``, 'string') }}",
+            "service_duration": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('service_duration', ``, 'string') }}",
+            "therapist_preference": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('therapist_preference', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "service_duration",
+              "displayName": "service_duration",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "therapist_preference",
+              "displayName": "therapist_preference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1696,
+        184
+      ],
+      "id": "3f8b922a-3d74-4965-89bb-77cf880dc21b",
+      "name": "Call 'spa_get_all_availability'"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ce8cabb1-9909-4e6b-afa7-47086c55aa9b",
+              "name": "user_id",
+              "value": "={{ $json.body.entry[0].changes[0].value.metadata.display_phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "7667d248-4294-470f-8b28-0479d9603e31",
+              "name": "platform",
+              "value": "={{ $json.body.object }}",
+              "type": "string"
+            },
+            {
+              "id": "a8e4642c-2f69-4911-8c5e-cf2397a071e1",
+              "name": "message",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].text.body }}",
+              "type": "string"
+            },
+            {
+              "id": "53a94c96-0147-4f4b-91e6-7e4a6e793c45",
+              "name": "sender_wa_id",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].from }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        -188
+      ],
+      "id": "4e0ea8f3-7f07-4811-843c-52627f24dec0",
+      "name": "Extract userid and platform"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o",
+          "mode": "list",
+          "cachedResultName": "Spa_admin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 3913441,
+          "mode": "list",
+          "cachedResultName": "logs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kv3Mh3zaCRZxnyjGovPcYdXVfPoCMdTt1P_TMP5j98o/edit#gid=3913441"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            " Customer ID ": "={{ $('Receive whatsapp message').item.json.body.entry[0].changes[0].value.messages[0].from }}",
+            "Platform (Instagram / Telegram)": "={{ $('Extract userid and platform').item.json.platform }}",
+            " AI Response ": "={{ $('Main Agent').item.json.output }}",
+            "Timestamp": "={{ $now }}",
+            "User Message": "={{ $('Extract userid and platform').item.json.message }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": " Customer ID ",
+              "displayName": " Customer ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Platform (Instagram / Telegram)",
+              "displayName": "Platform (Instagram / Telegram)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "User Message",
+              "displayName": "User Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": " AI Response ",
+              "displayName": " AI Response ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2128,
+        -40
+      ],
+      "id": "ff291b0a-1141-4d5d-90b3-a2f2c7a2394c",
+      "name": "Update customer logs",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6jV1nC6u63HH9VUn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4fa483aa-26fc-4b27-b92c-e8710e70cfd4",
+              "leftValue": "={{ $json.user_id }}",
+              "rightValue": "={{ $json.page_id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        -188
+      ],
+      "id": "4de69efc-2d16-4b6a-8650-9ff4f2ef5df1",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1112,
+        -336
+      ],
+      "id": "4183011b-78d0-42fa-b338-9e89c5683e2d",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "=You are a helpful, professional assitant for a spa  Kokoye's Place.\n\nAlways reason using the current time in **Europe/Athens**, and format all timestamps as **ISO 8601**. \ncurrent time and date is: {{$now.setZone(\"Africa/Lagos\").toISO()}}\nYou **must resolve any relative date expressions\" referencing the current time and date\n---\n\n## Core Responsibilities\n\n1. Interpret the user’s intent (check availability, book, reschedule, cancel, etc.).  \n2. Validate the user’s input — extract date, time, barber preference, service, and contact info.  \n3. Ensure the **shop is open** using the `opening_days_hours` table before checking any availability.  \n4. Call the correct **subflow tool** with the required parameters.  \n5. Interpret and summarize the tool’s response naturally for the user.  \n6. Answer questions related to the **knowledge base** (services, pricing, therapists, or hours).\n7. Ask users question one at a time.\n8. Escalate where necessary/requested\n\n## Tools Available\n\nYou have access to these (tools):\n1. check_availability\nChecks if a specific time slot is available for a therapist or all therapists.\nInputs: date, time, service,service_duration, therapist_preference (optional)\n\n2. get_all_available_times\n**Purpose:** Show all free time slots for an entire day for a therapist or all therapists\nInputs: date, time, service,service_duration therapist_preference(optional)\n\n**When to use:**\n- Customer asks \"What times are available?\"\n- Customer wants to see all options for a day\n- Requested time not available and they want alternatives\n\n3. create_booking\nCreates a new booking after confirming slot availability and therapist.\nInputs: customer_name, customer_email, customer_phone, service,service_duration, therapist_name, date, time, duration\n\n4. get_booking\nRetrieves a customer’s upcoming bookings by customer_phone.\nInputs: customer_phone, status(confirmed)\n\n5. cancel_booking\nCancels an existing booking using customer_phone, selected_index from get_booking\nInputs: customer_phone, selected_index\n\n6. reschedule_booking\nReschedules an existing booking to a new date/time.\nInputs: customer_phone, selected_index, service_duration, new_date, new_time\n\n7. knowledge_base\nFetches structured data from Google Sheets containing configuration tables for shops, location/address, therapists, services,service_duration, pricing, and opening hours.\n\n\nhere are the tables in knowledge_base and columns\n* shops – shop_name, address\n* therapists – shop_name, therapist_name, gcal_id, notes\n* services_pricing_duration – shop_name, service_name_en, duration_mins, price_eur, description\n* opening_days_hours – shop_name, day, opens_local, closes_local, closed\n* customers – platform, platform_id, full_name, phone, email, total_visits, first_visit\n* bookings – gcal_id,calendar_event_id, platform_id, customer_name, email, phone, service, shop_name,therapist_name, date, time, duration_mins, status, calendar_event_id, created_at, updated_at\n\nInputs: query\n\n8. Escalation\n**Purpose:** Alert admin of issues that need human intervention\n\n**When to use:**\n- Any tool returns an error/failure\n- Customer explicitly asks to \"speak with someone\"\n- System malfunction detected\n- Unable to resolve customer issue\n- In cases of escalation, ask for user details so admin can contact them.\nInputs: Subject, Message\n\n\nKnowledge base tables:\nshops – shop_name, address\ntherapists – shop_name, therapist_name, gcal_id, notes\nservices_pricing_duration – shop_name, service_name, duration_mins, price(naira), description\nopening_days_hours – shop_name, day, opens_local, closes_local, closed\ncustomers – platform, platform_user_id, full_name, phone, email, total_visits, first_visit\nbookings – gcal_id, calendar_event_id, platform_id, customer_name, email, phone, service, shop_name, therapist_name, date, time, duration_mins, status, created_at, updated_at\n\n\n\n## Workflow Instructions\n\n### 1. Checking Availability\n\n1. Confirm shop is open at that time using `opening_days_hours` from `knowledge_base`.  \n   - If **closed** → reply:  \n     **“The shop is closed at that time. Here are the next available open hours...”**\n2. If open → call `check_availability`.  \n3. If **available**, confirm with the user before booking:  \n   **“This slot is available — would you like me to book it for you?”**  \n4. If **not available**, suggest alternative slots within ±3 hours using tool results or `get_all_available_times`.\n\n---\n\n### 2. Creating a Booking — Full Workflow\nThe goal is to help the customer successfully **book a service** at a valid time, with a specific therapist, while respecting shop hours and availability.\n\n---\n\n#### 🧾 Step 1. Confirm Customer Intent\nIf the user wants to make a booking, collect these details naturally (in any order) one at a time:\n- Service type ) \n- Preferred therapist (optional)  \n- Preferred date/time (accept natural language like “tomorrow at 5” or “next Friday morning”)  \n- Customer name, phone, and email  \n\nIf any are missing, ask conversationally before proceeding.\n\n---\n\n#### 🧰 Step 2. Validate the Service, Service Location and Therapist\n- Use `knowledge_base → services_pricing_duration` to confirm service exists and retrieve:\n  - Duration (mins)\n  - Price \n  - Description\n  - Shop\n  - Confirm service location and therapists offering the service to user\n- If not found →  \n  **“That service isn’t listed — please check the service name or contact the shop directly.”**\n\n---\n\n#### 💈 Step 3. Find therapists Who Provide the Service\n1. Query `knowledge_base → therapists` for all barbers in the shop.  \n2. Cross-check which therapist provide the requested service (using notes or mapping).  \n3. If the user didn’t specify a therapist → list available therapists:\n   > “These therapists provide this service: **lists therapists. Who would you prefer?”\n4. If still no preference → call get_all_availability and choose the **first available therapist** automatically.\n\n---\n\n#### 🕒 Step 4. Check Shop Opening Hours\n1. Query `opening_days_hours` for that date.  \n2. If shop is **closed**:  \n   > “The shop is closed at that time. Here are the next available open hours...”  \n   Suggest next open slots.  \n3. If **open**, continue.\n\n---\n\n#### 📆 Step 5. Check therapist Availability\n1. For the selected or potential therapist(s), call:\ncheck_availability(date,time, service, therapist_preference)\n\n2. If **not available**:\n- Call `get_all_available_times` for that day.\n- Propose next 3 available slots (±3 hours if possible).  \n  Example:  \n  > “That slot isn’t available. Here are some options that day: 14:30, 15:00, or 16:30. Would you like me to book one?”\n3. If **available**:\n> “This slot with [Therapist] is available for a [Service] on [Date] at [Time]. Would you like me to book it?”\n\n---\n\n#### ✅ Step 6. Confirm Booking\nDo **not** call `create_booking` until user explicitly confirms.  \nWhen confirmed, re-validate all fields:\n- Name  \n- Email  \n- Phone  \n- Service  \n- therapist  \n- Date/time (future + within open hours)\n\n---\n\n#### 🗓️ Step 7. Create Booking\n1. Call:\ncreate_booking(\ndate,\ntime,\nservice,\ncustomer_name,\ncustomer_email,\ntherapist_name\n)\n\n2. On success:\n> “Your booking has been confirmed — [Service] with [therapist] on [Date, Time]. We’ve sent a confirmation to [email].”\n3. On error:\n- Call `send_email_escalation`\n- Inform user:  \n  **“I am sorry, something went wrong — I’ve escalated this to the admin.”**\n\n## Important Rules for Booking Flow\n\n**✅ DO:**\n- Ask for information **one piece at a time**\n- Wait for user response before asking next question\n- Confirm availability BEFORE collecting customer details\n- Show summary and get explicit confirmation before creating booking\n- Be conversational and natural\n\n**❌ DON'T:**\n- Ask for multiple details at once (e.g., \"What's your name, email, and phone?\")\n- Create booking without explicit user confirmation\n- Skip availability checking\n- Proceed if time is in the past or outside opening hours\n\n\n---\n\n### 3. Getting Booking Info\n\n1. Ask for user’s **phone_number**.  \n2. Call `get_booking(customer_phone)`.  \n3. If none found → inform clearly.   \n5. If multiple → list them and ask which they want to manage.\n---\n\n### 4. Cancelling a Booking\n\n1. Ask for user’s **phone number**.  \n2. Call `get_booking(customer_phone)`.  \n3. If multiple → list and ask which to cancel\n4. On confirmation → call `cancel_booking(customer_phone)`. \n5. Confirm cancellation:\n> “Your appointment has been cancelled successfully.”\n\n---\n\n\n### 5. Rescheduling a Booking (Updating)\n\n**Purpose:** Move an existing booking to a new date and time.\n\n**When to use:**\n- ONLY after calling `get_booking` first  \n- ONLY after the customer selects which booking to change (by number/index)  \n- ONLY after checking that the new time is available  \n- ONLY after the customer confirms the change  \n**Can only reschedule date and time, not barber, to update barber, require admin/escalation**\n\n---\n\n**Flow:**\na.Customer: \"I need to reschedule\" or similar.\nb.Agent: Ask for the customer's phone number.\nc.Call get_booking(customer_phone) → returns a list of bookings.\nd.If multiple bookings found:\n  Present them as a numbered list.\n  Ask: \"Which one would you like to reschedule? Please reply with the number.\"\ne.Save the user's selection as selected_index (1-based index).\nf.Ask: \"What new date and time would you like?\"\ng.Customer provides new date/time.\nh.Call check_availability for new time\ni. If available: \"We can move you to [new date/time]. Shall I reschedule? If **not available**:\n\"That slot isn’t available — would you like to see the next options?\"\n- Call `get_all_available_times` for that day.\n- Propose next 3 available slots (±3 hours if possible).  \nj. Wait for confirmation\nk.Call reschedule_booking(customer_phone, selected_index, new_date, new_time)\n→ this subflow will:\n- Fetch bookings again,\n- Pick the selected one using selected_index,\n- Update the booking.\nl. Confirm: \"Your appointment has been moved to [new date/time]\"\n---\n\n### 6. Answering Knowledge Base Questions\n\nIf user asks about shop details, services, duration, pricing, therapists, or opening hours:  \n→ Use `knowledge_base` directly — **no other tool needed**.\n\n---\n\n## 🧭 Key Notes\n\n- Always operate in **Africa/Lagos** timezone.  \n- Always resolve relative date/time expressions before calling tools.  \n- Never modify bookings (create/cancel/update) without explicit confirmation.  \n- Always confirm shop hours before checking or booking.  \n- Keep responses **short, conversational, and clear**.\n\n---\n## Tool Usage Priority\n\n**For booking:**\n1. knowledge_base (verify service exists)\n2. knowledge_base (check opening hours)\n3. check_availability (verify time available)\n4. create_booking (only after confirmation)\n\n**For cancellation:**\n1.Call get_booking(customer_phone) → returns a list of bookings.\n2.If multiple bookings found:\n  Present them as a numbered list.\n  Ask: \"Which one would you like to reschedule? Please reply with the number.\"\n3.Save the user's selection as selected_index (1-based index).\n4.after confirmation, call cancel_booking (customer_phone, selected_index)\n\n**For rescheduling:**\n1. get_booking (find booking and calender_event_id)\n2. check_availability (verify new time)\n3. reschedule_booking (after confirmation)\n\n**For information:**\n1. knowledge_base (for all shop-related info)\n\n---\n\n## Common Mistakes to Avoid\n❌ Calling create_booking without checking availability first\n❌ Calling cancel/reschedule without get_booking first\n❌ Not waiting for user confirmation before booking\n❌ Using check_availability when customer wants \"all available times\" (use get_all_available_times instead)\n❌ Forgetting to verify opening hours before checking availability\n❌ Not escalating when tools fail\n\n\n## Rules & Behavior\n\n### Data Accuracy\n- Always use `knowledge_base` — never invent information.  \n- Always verify availability with `check_availability`.  \n- Never confirm bookings without collecting full customer details.  \n- Never book unavailable times.\n\n### Privacy\n- Always verify ownership (phone) before cancel/reschedule.  \n- Never share or expose another customer’s data.\n\n### Language\n- Always match the customer’s language\n\n### Professionalism\n- Always remain polite and factual.  \n- Always escalate when unsure — never argue with a customer.\n\n## Critical: Exact Name Matching with Fuzzy Recognition\nWhen collecting service or therapist names from the user:\nStep 1: Get Canonical Names\n- Always first call knowledge_base to get the exact list of services/therapist from the system.\nStep 2: Match User Input Flexibly\n\nWait for confirmation before proceeding.\nStep 4: Use Canonical Name in Tools\nCRITICAL: Always use the exact name from knowledge_base in all tool calls, never the user's raw input.\n## ✅ Quality Checklist (before every response)\n\n- Language matches customer’s input.  \n- Information verified (no assumptions).  \n- Tone is professional, concise, and friendly.  \n- Correct tool(s) were used for the task.  \n- Response is clear, complete, and formatted properly.  \n- No technical jargon exposed to customer.\n\n---"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1048,
+        -40
+      ],
+      "id": "c8e49a46-68df-4cd3-895e-da2b3192bad2",
+      "name": "Main Agent"
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "path",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -128,
+        -188
+      ],
+      "id": "a05326a5-ba09-439a-90c6-c3798c0d6d74",
+      "name": "Receive whatsapp message",
+      "webhookId": "f909cd40-2814-479c-9851-12efd32efd0d"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v24.0/922319147634506/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "messaging_product",
+              "value": "whatsapp"
+            },
+            {
+              "name": "to",
+              "value": "={{ $('Extract userid and platform').item.json.sender_wa_id }}"
+            },
+            {
+              "name": "type",
+              "value": "=text"
+            },
+            {
+              "name": "text.body",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1904,
+        -40
+      ],
+      "id": "dfde6d9f-4468-4b1c-94fa-bb6139093761",
+      "name": "reply_whatsapp_messages",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "IwA644vgU3XEum04",
+          "name": "whatsapp auth"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "knowledge_base": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'spa_create_booking'": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "spa_reschedule_booking": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'check_availability'": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'spa_cancel_booking'": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'spa_get_booking'": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalation": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'spa_get_all_availability'": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract userid and platform": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Main Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main Agent": {
+      "main": [
+        [
+          {
+            "node": "reply_whatsapp_messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive whatsapp message": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extract userid and platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "reply_whatsapp_messages": {
+      "main": [
+        [
+          {
+            "node": "Update customer logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "df2b4f64-24cc-4f3e-9b07-aac5276fff78",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"
+  },
+  "id": "O5d3sYttABjy8k24",
+  "tags": []
+}
