@@ -11,7 +11,7 @@
       "typeVersion": 1.3,
       "position": [
         672,
-        184
+        192
       ],
       "id": "3267f0cd-bed8-461b-b1e0-2e15ee88f190",
       "name": "Simple Memory"
@@ -30,7 +30,7 @@
       "typeVersion": 1.3,
       "position": [
         544,
-        184
+        192
       ],
       "id": "d6eb3ff9-6e19-495c-a870-de98de9b8b98",
       "name": "OpenAI Chat Model",
@@ -61,7 +61,7 @@
       "typeVersion": 4.7,
       "position": [
         800,
-        184
+        192
       ],
       "id": "ecc99d6c-9d17-4b56-883d-777eee0d554d",
       "name": "knowledge_base",
@@ -184,7 +184,7 @@
       "typeVersion": 2.2,
       "position": [
         928,
-        184
+        192
       ],
       "id": "a0c8ae89-d30e-49b7-833a-6933dbf81ed3",
       "name": "Call 'spa_create_booking'"
@@ -274,7 +274,7 @@
       "typeVersion": 2.2,
       "position": [
         1056,
-        184
+        192
       ],
       "id": "00fb12b0-a61c-4763-ab47-f7bef1f3adbb",
       "name": "spa_reschedule_booking"
@@ -358,7 +358,7 @@
       "typeVersion": 2.2,
       "position": [
         1184,
-        184
+        192
       ],
       "id": "3f3f1612-48e9-45cb-a441-157dc36cea36",
       "name": "Call 'check_availability'"
@@ -409,7 +409,7 @@
       "typeVersion": 2.2,
       "position": [
         1312,
-        184
+        192
       ],
       "id": "46213320-5de0-4512-ab2c-48dff6f11a00",
       "name": "Call 'spa_cancel_booking'"
@@ -460,7 +460,7 @@
       "typeVersion": 2.2,
       "position": [
         1440,
-        184
+        192
       ],
       "id": "0773a415-83a4-42e8-b239-955d27d5ff9e",
       "name": "Call 'spa_get_booking'"
@@ -476,7 +476,7 @@
       "typeVersion": 2.1,
       "position": [
         1568,
-        184
+        192
       ],
       "id": "421a66e5-6384-4678-bad8-c641fe9715db",
       "name": "Escalation",
@@ -567,7 +567,7 @@
       "typeVersion": 2.2,
       "position": [
         1696,
-        184
+        192
       ],
       "id": "3f8b922a-3d74-4965-89bb-77cf880dc21b",
       "name": "Call 'spa_get_all_availability'"
@@ -608,7 +608,7 @@
       "typeVersion": 3.4,
       "position": [
         96,
-        -188
+        -192
       ],
       "id": "4e0ea8f3-7f07-4811-843c-52627f24dec0",
       "name": "Extract userid and platform"
@@ -701,7 +701,7 @@
       "typeVersion": 4.7,
       "position": [
         2128,
-        -40
+        -48
       ],
       "id": "ff291b0a-1141-4d5d-90b3-a2f2c7a2394c",
       "name": "Update customer logs",
@@ -740,7 +740,7 @@
       "typeVersion": 2.2,
       "position": [
         320,
-        -188
+        -192
       ],
       "id": "4de69efc-2d16-4b6a-8650-9ff4f2ef5df1",
       "name": "If"
@@ -750,7 +750,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1112,
+        1120,
         -336
       ],
       "id": "4183011b-78d0-42fa-b338-9e89c5683e2d",
@@ -767,8 +767,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3,
       "position": [
-        1048,
-        -40
+        1056,
+        -48
       ],
       "id": "c8e49a46-68df-4cd3-895e-da2b3192bad2",
       "name": "Main Agent"
@@ -783,7 +783,7 @@
       "typeVersion": 2.1,
       "position": [
         -128,
-        -188
+        -192
       ],
       "id": "a05326a5-ba09-439a-90c6-c3798c0d6d74",
       "name": "Receive whatsapp message",
@@ -831,7 +831,7 @@
       "typeVersion": 4.3,
       "position": [
         1904,
-        -40
+        -48
       ],
       "id": "dfde6d9f-4468-4b1c-94fa-bb6139093761",
       "name": "reply_whatsapp_messages",
@@ -1024,9 +1024,10 @@
     "executionOrder": "v1",
     "timezone": "Africa/Lagos",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "errorWorkflow": "s6UBwQ9jOTinXN9M"
   },
-  "versionId": "df2b4f64-24cc-4f3e-9b07-aac5276fff78",
+  "versionId": "be44b294-abe5-4c70-a93a-58e99fa186d0",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "9ff88b2cd57fd15c6f4565aea4ad7a41419e6f3c871750c472db04f46ad9a443"

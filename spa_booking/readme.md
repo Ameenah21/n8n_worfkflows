@@ -159,6 +159,9 @@ Flow
 ### 7. daily_consistency_check:
 Purpose: Detect booking conflicts that slip through safeguards and notify the admin.
 
+### 8. Error Workflow
+Purpose: attached to each of the workflows and sends an email notification on error.
+
 Trigger
 Scheduled (runs daily)
 Flow
